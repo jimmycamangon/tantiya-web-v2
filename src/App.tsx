@@ -4,7 +4,7 @@ import { seedDefaultCategories } from "./db/seed";
 import AddAccountForm from "./features/accounts/AddAccountForm";
 import AccountList from "./features/accounts/AccountList";
 import { getCurrentCutoff } from "./features/cutoffs/getCurrentCutoff";
-
+import AddExpenseForm from "./features/expenses/AddExpenseForm";
 
 function App() {
   useEffect(() => {
@@ -12,8 +12,8 @@ function App() {
   }, []);
 
   console.log(
-  getCurrentCutoff(new Date())
-);
+    getCurrentCutoff(new Date())
+  );
 
   return (
     <div>
@@ -22,6 +22,10 @@ function App() {
       <AddAccountForm />
 
       <AccountList />
+
+      <hr />
+
+      <AddExpenseForm />
     </div>
   );
 }

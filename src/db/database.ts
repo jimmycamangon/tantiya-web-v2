@@ -30,7 +30,8 @@ export class TantiyaDB extends Dexie {
 
       incomes: "id,date,accountId,cutoffId",
 
-      expenses: "id,date,accountId,categoryId,cutoffId",
+      expenses:
+        "id,isDeleted,date,accountId,categoryId,cutoffId",
 
       obligations:
         "id,name,accountId,recurrenceType,fundingRule,active",

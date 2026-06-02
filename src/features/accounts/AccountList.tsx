@@ -36,7 +36,7 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../db/database";
-import { calculateAccountBalance } from "./calculateAccountBalance";
+import { calculateAccountBalance } from "./accountBalance.service";
 
 export default function AccountList() {
     const accountsWithBalance = useLiveQuery(async () => {

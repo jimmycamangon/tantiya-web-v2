@@ -6,5 +6,6 @@ export interface Expense {
   cutoffId: string;
   date: string;
   notes?: string;
+  isDeleted?: boolean;
   createdAt: string;
 }

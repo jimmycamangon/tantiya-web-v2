@@ -14,11 +14,20 @@ export async function calculateAccountBalance(
     .equals(accountId)
     .toArray();
 
+  const incomes = await db.incomes
+    .where("accountId")
+    .equals(accountId)
+    .toArray();
   const adjustmentTotal = adjustments.reduce(
     (sum, item) => sum + item.amount,
     0
   );
-
+  const incomeTotal = incomes
+    .filter(income => !income.isDeleted)
+    .reduce(
+      (sum, income) => sum + income.amount,
+      0
+    );
   const expenseTotal = expenses
     .filter(expense => !expense.isDeleted)
     .reduce(
@@ -26,5 +35,9 @@ export async function calculateAccountBalance(
       0
     );
 
-  return adjustmentTotal - expenseTotal;
+  return (
+    adjustmentTotal +
+    incomeTotal -
+    expenseTotal
+  );
 }

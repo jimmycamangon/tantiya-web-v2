@@ -5,6 +5,13 @@ import AddAccountForm from "./features/accounts/AddAccountForm";
 import AccountList from "./features/accounts/AccountList";
 import { getCurrentCutoff } from "./features/cutoffs/getCurrentCutoff";
 import AddExpenseForm from "./features/expenses/AddExpenseForm";
+import ExpenseList from "./features/expenses/ExpenseList";
+import QuickExpenseInput from "./features/expenses/QuickExpenseInput";
+import AddIncomeForm
+  from "./features/incomes/AddIncomeForm";
+import IncomeList
+  from "./features/incomes/IncomeList";
+
 
 function App() {
   useEffect(() => {
@@ -25,7 +32,15 @@ function App() {
 
       <hr />
 
+      <QuickExpenseInput />
+
       <AddExpenseForm />
+
+      <ExpenseList />
+
+      <AddIncomeForm />
+
+      <IncomeList />
     </div>
   );
 }

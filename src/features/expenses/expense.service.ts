@@ -8,6 +8,12 @@ export async function createExpense(
   accountId: string,
   notes?: string
 ): Promise<Expense> {
+
+  if (amount <= 0) {
+    throw new Error(
+      "Amount must be greater than zero"
+    );
+  }
   const now = new Date();
 
   const cutoff = getCurrentCutoff(now);
@@ -27,4 +33,32 @@ export async function createExpense(
   await db.expenses.add(expense);
 
   return expense;
+}
+
+
+export async function softDeleteExpense(
+  expenseId: string
+): Promise<void> {
+  await db.expenses.update(expenseId, {
+    isDeleted: true,
+  });
+}
+
+export async function updateExpense(
+  expenseId: string,
+  amount: number,
+  notes?: string
+): Promise<void> {
+
+  if (amount <= 0) {
+    throw new Error(
+      "Amount must be greater than zero"
+    );
+  }
+
+
+  await db.expenses.update(expenseId, {
+    amount,
+    notes,
+  });
 }

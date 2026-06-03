@@ -34,10 +34,40 @@ export async function calculateAccountBalance(
       (sum, expense) => sum + expense.amount,
       0
     );
+  const transfers = await db.transfers
+    .toArray();
 
+
+  const outgoingTransferTotal =
+    transfers
+      .filter(
+        transfer =>
+          !transfer.isDeleted &&
+          transfer.fromAccountId === accountId
+      )
+      .reduce(
+        (sum, transfer) =>
+          sum + transfer.amount,
+        0
+      );
+
+  const incomingTransferTotal =
+    transfers
+      .filter(
+        transfer =>
+          !transfer.isDeleted &&
+          transfer.toAccountId === accountId
+      )
+      .reduce(
+        (sum, transfer) =>
+          sum + transfer.amount,
+        0
+      );
   return (
     adjustmentTotal +
     incomeTotal -
-    expenseTotal
+    expenseTotal -
+    outgoingTransferTotal +
+    incomingTransferTotal
   );
 }

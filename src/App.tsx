@@ -11,7 +11,12 @@ import AddIncomeForm
   from "./features/incomes/AddIncomeForm";
 import IncomeList
   from "./features/incomes/IncomeList";
-
+import AddTransferForm
+  from "./features/transfers/AddTransferForm";
+import AddObligationForm
+  from "./features/obligations/AddObligationForm";
+import ObligationList
+  from "./features/obligations/ObligationList";
 
 function App() {
   useEffect(() => {
@@ -41,6 +46,12 @@ function App() {
       <AddIncomeForm />
 
       <IncomeList />
+
+      <AddTransferForm />
+
+      <AddObligationForm />
+
+      <ObligationList />
     </div>
   );
 }

@@ -36,7 +36,8 @@ export class TantiyaDB extends Dexie {
       obligations:
         "id,name,accountId,recurrenceType,fundingRule,active",
 
-      transfers: "id,date,fromAccountId,toAccountId",
+      transfers:
+        "id,date,fromAccountId,toAccountId,isDeleted",
 
       adjustments: "id,date,accountId",
     });

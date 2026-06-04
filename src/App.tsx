@@ -97,12 +97,26 @@ function App() {
                     <aside className="border-b border-stone-200 bg-white/85 px-4 py-4 backdrop-blur lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
                         <div className="mb-4 flex items-center justify-between gap-3 lg:mb-8">
                             <div>
-                                <p className="text-sm font-semibold text-stone-950">
-                                    Tantiya
-                                </p>
-                                <p className="text-xs text-stone-500">
-                                    Personal finance tracker
-                                </p>
+                                <NavLink
+                                    to="/"
+                                    className="flex items-center gap-3 transition hover:opacity-90"
+                                >
+                                    <img
+                                        src="./icon.png"
+                                        alt="Tantiya"
+                                        className="h-10 w-10 rounded-lg object-cover"
+                                    />
+
+                                    <div>
+                                        <p className="text-sm font-semibold text-stone-950">
+                                            Tantiya
+                                        </p>
+
+                                        <p className="text-xs text-stone-500">
+                                            Personal finance tracker
+                                        </p>
+                                    </div>
+                                </NavLink>
                             </div>
 
                             <div className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">

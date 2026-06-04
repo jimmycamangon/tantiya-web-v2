@@ -45,3 +45,51 @@ export async function getAccounts() {
         .filter(account => !account.archived)
         .toArray();
 }
+
+export async function updateAccount(
+    accountId: string,
+    name: string
+): Promise<void> {
+
+    await db.accounts.update(
+        accountId,
+        {
+            name
+        }
+    );
+}
+
+export async function archiveAccount(
+    accountId: string
+): Promise<void> {
+
+    await db.accounts.update(
+        accountId,
+        {
+            archived: true
+        }
+    );
+}
+
+export async function getArchivedAccounts() {
+
+    return db.accounts
+        .filter(
+            account =>
+                account.archived
+        )
+        .toArray();
+}
+
+
+export async function restoreAccount(
+    accountId: string
+): Promise<void> {
+
+    await db.accounts.update(
+        accountId,
+        {
+            archived: false
+        }
+    );
+}

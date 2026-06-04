@@ -1,59 +1,130 @@
 import { useEffect } from "react";
 import { seedDefaultCategories } from "./db/seed";
+import {
+    BrowserRouter,
+    Routes,
+    Route,
+    Link
+} from "react-router-dom";
 
-import AddAccountForm from "./features/accounts/AddAccountForm";
-import AccountList from "./features/accounts/AccountList";
-import { getCurrentCutoff } from "./features/cutoffs/getCurrentCutoff";
-import AddExpenseForm from "./features/expenses/AddExpenseForm";
-import ExpenseList from "./features/expenses/ExpenseList";
-import QuickExpenseInput from "./features/expenses/QuickExpenseInput";
-import AddIncomeForm
-  from "./features/incomes/AddIncomeForm";
-import IncomeList
-  from "./features/incomes/IncomeList";
-import AddTransferForm
-  from "./features/transfers/AddTransferForm";
-import AddObligationForm
-  from "./features/obligations/AddObligationForm";
-import ObligationList
-  from "./features/obligations/ObligationList";
+import DashboardPage
+    from "./pages/DashboardPage";
+
+import AccountsPage
+    from "./pages/AccountsPage";
+
+import ExpensesPage
+    from "./pages/ExpensesPage";
+
+import IncomesPage
+    from "./pages/IncomesPage";
+
+import TransfersPage
+    from "./pages/TransfersPage";
+
+import ObligationsPage
+    from "./pages/ObligationsPage";
 
 function App() {
   useEffect(() => {
     seedDefaultCategories();
   }, []);
 
-  console.log(
-    getCurrentCutoff(new Date())
-  );
+return (
+    <BrowserRouter>
 
-  return (
-    <div>
-      <h1>Tantiya V2</h1>
+        <h1>
+            Tantiya V2
+        </h1>
 
-      <AddAccountForm />
+        <nav>
 
-      <AccountList />
+            <Link to="/">
+                Dashboard
+            </Link>
 
-      <hr />
+            {" | "}
 
-      <QuickExpenseInput />
+            <Link to="/accounts">
+                Accounts
+            </Link>
 
-      <AddExpenseForm />
+            {" | "}
 
-      <ExpenseList />
+            <Link to="/expenses">
+                Expenses
+            </Link>
 
-      <AddIncomeForm />
+            {" | "}
 
-      <IncomeList />
+            <Link to="/incomes">
+                Incomes
+            </Link>
 
-      <AddTransferForm />
+            {" | "}
 
-      <AddObligationForm />
+            <Link to="/transfers">
+                Transfers
+            </Link>
 
-      <ObligationList />
-    </div>
-  );
+            {" | "}
+
+            <Link to="/obligations">
+                Obligations
+            </Link>
+
+        </nav>
+
+        <hr />
+
+        <Routes>
+
+            <Route
+                path="/"
+                element={
+                    <DashboardPage />
+                }
+            />
+
+            <Route
+                path="/accounts"
+                element={
+                    <AccountsPage />
+                }
+            />
+
+            <Route
+                path="/expenses"
+                element={
+                    <ExpensesPage />
+                }
+            />
+
+            <Route
+                path="/incomes"
+                element={
+                    <IncomesPage />
+                }
+            />
+
+            <Route
+                path="/transfers"
+                element={
+                    <TransfersPage />
+                }
+            />
+
+            <Route
+                path="/obligations"
+                element={
+                    <ObligationsPage />
+                }
+            />
+
+        </Routes>
+
+    </BrowserRouter>
+);
 }
 
 export default App;

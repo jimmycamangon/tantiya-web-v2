@@ -49,3 +49,38 @@ export async function createTransfer(
 
     return transfer;
 }
+
+
+export async function getTransfers() {
+
+    return db.transfers
+        .filter(
+            transfer =>
+                !transfer.isDeleted
+        )
+        .toArray();
+}
+
+export async function softDeleteTransfer(
+    transferId: string
+): Promise<void> {
+
+    await db.transfers.update(
+        transferId,
+        {
+            isDeleted: true
+        }
+    );
+}
+
+
+export async function updateTransfer(
+    transferId: string,
+    updates: Partial<Transfer>
+): Promise<void> {
+
+    await db.transfers.update(
+        transferId,
+        updates
+    );
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import { useLiveQuery }
     from "dexie-react-hooks";
@@ -16,24 +16,6 @@ import {
 import {
     getObligationStatus
 } from "./getObligationStatus";
-
-import {
-    calculateReservedAmount
-} from "./calculateReservedAmount";
-
-import {
-    calculateAvailableBalance
-} from "../budget/calculateAvailableBalance";
-
-import {
-    getAccounts
-} from "../accounts/account.service";
-
-import {
-    calculateAccountBalance
-} from "../accounts/accountBalance.service";
-
-
 
 
 export default function ObligationList() {
@@ -60,60 +42,6 @@ export default function ObligationList() {
         setEditDueDay] =
         useState("");
 
-    useEffect(() => {
-
-        async function loadBalance() {
-
-
-
-            const accounts =
-                await getAccounts();
-            console.log(accounts);
-
-
-            let totalBalance = 0;
-
-            for (const account of accounts) {
-
-                const balance =
-                    await calculateAccountBalance(
-                        account.id
-                    );
-
-                totalBalance += balance;
-            }
-
-            setActualBalance(
-                totalBalance
-            );
-
-            const available =
-                await calculateAvailableBalance(
-                    accounts,
-                    obligations ?? []
-                );
-
-            setAvailableBalance(
-                available
-            );
-        }
-
-        loadBalance();
-
-    }, [obligations]);
-
-    const reservedAmount =
-        calculateReservedAmount(
-            obligations ?? []
-        );
-
-    const [availableBalance,
-        setAvailableBalance] =
-        useState(0);
-
-    const [actualBalance,
-        setActualBalance] =
-        useState(0);
 
     return (
         <div>
@@ -121,21 +49,6 @@ export default function ObligationList() {
             <h2>
                 Obligations
             </h2>
-
-            <div>
-                Actual Balance:
-                ₱{actualBalance}
-            </div>
-
-            <div>
-                Reserved Amount:
-                ₱{reservedAmount}
-            </div>
-
-            <div>
-                Available To Spend:
-                ₱{availableBalance}
-            </div>
 
             <ul>
 

@@ -11,22 +11,46 @@ import ArchivedAccountList
 export default function AccountsPage() {
 
     return (
-        <>
+        <div className="space-y-6">
+            <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium text-emerald-700">
+                    Wallets
+                </p>
+                <h1 className="text-2xl font-semibold text-stone-950 sm:text-3xl">
+                    Accounts
+                </h1>
+                <p className="max-w-2xl text-sm text-stone-500">
+                    Keep track of cash sources, wallets, bank accounts, and their usable balances.
+                </p>
+            </div>
+
             <AddAccountForm />
 
-            <h2>
-                Active Accounts
-            </h2>
+            <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4">
+                    <h2 className="text-base font-semibold text-stone-950">
+                        Active Accounts
+                    </h2>
+                    <p className="text-sm text-stone-500">
+                        Accounts included in your current balance.
+                    </p>
+                </div>
 
-            <AccountList />
+                <AccountList />
+            </section>
 
-            <hr />
+            <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4">
+                    <h2 className="text-base font-semibold text-stone-950">
+                        Archived Accounts
+                    </h2>
+                    <p className="text-sm text-stone-500">
+                        Hidden accounts that can be restored anytime.
+                    </p>
+                </div>
 
-            <h2>
-                Archived Accounts
-            </h2>
-
-            <ArchivedAccountList />
-        </>
+                <ArchivedAccountList />
+            </section>
+        </div>
     );
 }

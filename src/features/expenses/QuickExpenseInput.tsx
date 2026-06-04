@@ -182,7 +182,7 @@ export default function QuickExpenseInput() {
                 onSubmit={handleSubmit}
                 className="space-y-4"
             >
-                <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                     <input
                         value={input}
                         onChange={(e) => {
@@ -193,13 +193,13 @@ export default function QuickExpenseInput() {
                             updatePreview(value);
                         }}
                         placeholder="e.g. 120 lunch cash food"
-                        className="h-11 min-w-0 flex-1 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition placeholder:text-stone-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                        className="h-10 min-w-0 flex-1 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition placeholder:text-stone-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                     />
 
                     <button
                         type="submit"
                         disabled={isSaving || !input.trim()}
-                        className="inline-flex h-11 items-center justify-center rounded-md bg-stone-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-800 disabled:bg-stone-300"
+                        className="inline-flex h-10 w-full sm:w-auto items-center justify-center rounded-md bg-stone-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-800 disabled:bg-stone-300"
                     >
                         {isSaving
                             ? "Adding..."

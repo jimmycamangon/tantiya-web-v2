@@ -12,7 +12,6 @@ import { createAccount }
 export default function AddAccountForm() {
     const [name, setName] = useState("");
     const [openingBalance, setOpeningBalance] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
     const toast =
         useToast();
 
@@ -21,11 +20,17 @@ export default function AddAccountForm() {
     ) => {
         e.preventDefault();
 
-        if (!name.trim()) return;
 
-        setIsSaving(
-            true
-        );
+        if (
+            !name.trim()
+        ) {
+            toast({
+                type: "warning",
+                message: "Complete all required fields."
+            });
+
+            return;
+        }
 
         try {
             await createAccount(
@@ -45,10 +50,6 @@ export default function AddAccountForm() {
                 type: "error",
                 message: "Account already exists."
             });
-        } finally {
-            setIsSaving(
-                false
-            );
         }
     };
 
@@ -101,16 +102,13 @@ export default function AddAccountForm() {
 
                 <button
                     type="submit"
-                    disabled={isSaving || !name.trim()}
                     className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-stone-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-800 disabled:bg-stone-300 lg:self-end"
                 >
                     <Plus
                         aria-hidden="true"
                         className="h-4 w-4"
                     />
-                    {isSaving
-                        ? "Adding..."
-                        : "Add"}
+                    Add Account
                 </button>
             </form>
         </section>

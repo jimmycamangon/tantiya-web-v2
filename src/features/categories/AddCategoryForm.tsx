@@ -71,7 +71,7 @@ export default function AddCategoryForm() {
 
             <form
                 onSubmit={handleSubmit}
-                className="flex flex-col gap-3 sm:flex-row"
+                className="grid gap-3 sm:grid-cols-[1fr_auto]"
             >
 
                 <input
@@ -82,12 +82,12 @@ export default function AddCategoryForm() {
                         )
                     }
                     placeholder="Category Name"
-                    className="h-10 flex-1 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition placeholder:text-stone-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                    className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition placeholder:text-stone-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                 />
 
                 <button
                     type="submit"
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-stone-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-800"
+                    className="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-2 rounded-md bg-stone-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-800"
                 >
                     <Plus
                         className="h-4 w-4"

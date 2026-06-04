@@ -1,6 +1,18 @@
 import { useState }
     from "react";
 
+import {
+    Check,
+    Pencil,
+    Trash2,
+    X
+} from "lucide-react";
+
+import {
+    useConfirmDialog,
+    useToast
+} from "../../components/AppFeedback";
+
 import { useLiveQuery }
     from "dexie-react-hooks";
 
@@ -12,6 +24,36 @@ import {
     updateTransfer,
     softDeleteTransfer
 } from "./transfer.service";
+
+
+function formatCurrency(
+    amount: number
+) {
+    return new Intl.NumberFormat(
+        "en-PH",
+        {
+            style: "currency",
+            currency: "PHP"
+        }
+    ).format(
+        amount
+    );
+}
+
+function formatDate(
+    date: string
+) {
+    return new Intl.DateTimeFormat(
+        "en-PH",
+        {
+            month: "short",
+            day: "numeric",
+            year: "numeric"
+        }
+    ).format(
+        new Date(date)
+    );
+}
 
 export default function TransferList() {
 
@@ -42,6 +84,12 @@ export default function TransferList() {
         setEditNotes
     ] = useState("");
 
+    const confirm =
+        useConfirmDialog();
+
+    const toast =
+        useToast();
+
     function getAccountName(
         accountId: string
     ) {
@@ -55,36 +103,78 @@ export default function TransferList() {
         );
     }
 
+    if (
+        !transfers ||
+        transfers.length === 0
+    ) {
+        return (
+            <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+
+                <div className="mb-4">
+                    <h2 className="text-base font-semibold text-stone-950">
+                        Transfer History
+                    </h2>
+
+                    <p className="text-sm text-stone-500">
+                        Money moved between accounts.
+                    </p>
+                </div>
+
+                <div className="rounded-md border border-dashed border-stone-300 bg-stone-50 px-4 py-6 text-sm text-stone-500">
+                    No transfers recorded yet.
+                </div>
+
+            </section>
+        );
+    }
     return (
-        <ul>
+        <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
 
-            {transfers?.map(
-                transfer => (
+            <div className="mb-4">
+                <h2 className="text-base font-semibold text-stone-950">
+                    Transfer History
+                </h2>
 
-                    <li
-                        key={
-                            transfer.id
-                        }
-                    >
+                <p className="text-sm text-stone-500">
+                    Money moved between accounts.
+                </p>
+            </div>
 
-                        {
-                            editingTransferId === transfer.id
-                                ? (
-                                    <div>
+            <div className="divide-y divide-stone-100 overflow-hidden rounded-md border border-stone-200">
 
-                                        <div>
-                                            {transfer.date.slice(0, 10)}
-                                            {" | "}
-                                            {getAccountName(
-                                                transfer.fromAccountId
-                                            )}
-                                            {" → "}
-                                            {getAccountName(
-                                                transfer.toAccountId
-                                            )}
-                                        </div>
+                {transfers?.map(
+                    transfer => (
 
-                                        <div>
+                        <div
+                            key={transfer.id}
+                            className="px-4 py-3"
+                        >
+
+                            {
+                                editingTransferId === transfer.id
+                                    ? (
+                                        <div className="grid gap-3 lg:grid-cols-[140px_1fr_120px_1fr_auto] lg:items-center">
+
+                                            <p className="text-stone-500">
+                                                {formatDate(
+                                                    transfer.date
+                                                )}
+                                            </p>
+
+                                            <p className="font-medium text-stone-950">
+                                                {
+                                                    getAccountName(
+                                                        transfer.fromAccountId
+                                                    )
+                                                }
+                                                {" → "}
+                                                {
+                                                    getAccountName(
+                                                        transfer.toAccountId
+                                                    )
+                                                }
+                                            </p>
+
                                             <input
                                                 type="number"
                                                 value={editAmount}
@@ -93,10 +183,9 @@ export default function TransferList() {
                                                         e.target.value
                                                     )
                                                 }
+                                                className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                                             />
-                                        </div>
 
-                                        <div>
                                             <input
                                                 value={editNotes}
                                                 onChange={(e) =>
@@ -104,133 +193,197 @@ export default function TransferList() {
                                                         e.target.value
                                                     )
                                                 }
+                                                placeholder="Note"
+                                                className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                                             />
-                                        </div>
 
-                                        <div>
-                                            <button
-                                                onClick={async () => {
+                                            <div className="flex gap-2">
 
-                                                    await updateTransfer(
-                                                        transfer.id,
-                                                        {
-                                                            amount: Number(
-                                                                editAmount
-                                                            ),
-                                                            notes:
-                                                                editNotes
+                                                <button
+                                                    type="button"
+                                                    title="Save transfer"
+                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-emerald-600 text-white transition hover:bg-emerald-700"
+                                                    onClick={async () => {
+
+                                                        try {
+
+                                                            await updateTransfer(
+                                                                transfer.id,
+                                                                {
+                                                                    amount:
+                                                                        Number(
+                                                                            editAmount
+                                                                        ),
+                                                                    notes:
+                                                                        editNotes
+                                                                }
+                                                            );
+
+                                                            toast({
+                                                                type: "success",
+                                                                message:
+                                                                    "Transfer updated."
+                                                            });
+
+                                                            setEditingTransferId(
+                                                                ""
+                                                            );
+
+                                                        } catch (error) {
+
+                                                            toast({
+                                                                type: "error",
+                                                                message:
+                                                                    error instanceof Error
+                                                                        ? error.message
+                                                                        : "Unable to update transfer."
+                                                            });
                                                         }
-                                                    );
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className="h-4 w-4"
+                                                    />
+                                                </button>
 
-                                                    setEditingTransferId(
-                                                        ""
-                                                    );
-                                                }}
-                                            >
-                                                Save
-                                            </button>
+                                                <button
+                                                    type="button"
+                                                    title="Cancel editing"
+                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-stone-300 bg-white text-stone-600 transition hover:bg-stone-50 hover:text-stone-950"
+                                                    onClick={() =>
+                                                        setEditingTransferId(
+                                                            ""
+                                                        )
+                                                    }
 
-                                            <button
-                                                onClick={() =>
-                                                    setEditingTransferId(
-                                                        ""
-                                                    )
-                                                }
-                                            >
-                                                Cancel
-                                            </button>
+                                                >
+                                                    <X
+                                                        className="h-4 w-4"
+                                                    />
+                                                </button>
+
+                                            </div>
+
                                         </div>
+                                    )
+                                    : (
+                                        <>
+                                            <div className="grid gap-3 lg:grid-cols-[140px_1fr_140px_auto] lg:items-center">
 
-                                    </div>
-                                )
-                                : (
-                                    <>
+                                                <p className="text-stone-500">
+                                                    {formatDate(
+                                                        transfer.date
+                                                    )}
+                                                </p>
 
-                                        {
-                                            transfer.date.slice(
-                                                0,
-                                                10
-                                            )
-                                        }
+                                                <div className="min-w-0">
+                                                    <p className="truncate font-semibold text-stone-950">
+                                                        {
+                                                            getAccountName(
+                                                                transfer.fromAccountId
+                                                            )
+                                                        }
+                                                        {" → "}
+                                                        {
+                                                            getAccountName(
+                                                                transfer.toAccountId
+                                                            )
+                                                        }
+                                                    </p>
 
-                                        {" | "}
+                                                    <p className="text-xs text-stone-500">
+                                                        {
+                                                            transfer.notes ||
+                                                            "Transfer"
+                                                        }
+                                                    </p>
+                                                </div>
 
-                                        {
-                                            getAccountName(
-                                                transfer.fromAccountId
-                                            )
-                                        }
+                                                <p className="font-semibold text-emerald-700 lg:text-right">
+                                                    {formatCurrency(
+                                                        transfer.amount
+                                                    )}
+                                                </p>
 
-                                        {" → "}
+                                                <div className="flex gap-2 lg:justify-end">
+                                                    <button
+                                                        type="button"
+                                                        title="Edit transfer"
+                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-stone-300 bg-white text-stone-600 transition hover:bg-stone-50 hover:text-stone-950"
+                                                        onClick={() => {
 
-                                        {
-                                            getAccountName(
-                                                transfer.toAccountId
-                                            )
-                                        }
+                                                            setEditingTransferId(
+                                                                transfer.id
+                                                            );
 
-                                        {" | ₱"}
+                                                            setEditAmount(
+                                                                transfer.amount.toString()
+                                                            );
 
-                                        {
-                                            transfer.amount
-                                        }
+                                                            setEditNotes(
+                                                                transfer.notes ??
+                                                                ""
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Pencil
+                                                            className="h-4 w-4"
+                                                        />
+                                                    </button>
 
-                                        {" | "}
+                                                    <button
+                                                        type="button"
+                                                        title="Delete transfer"
+                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-stone-300 bg-white text-stone-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700"
+                                                        onClick={async () => {
 
-                                        {
-                                            transfer.notes
-                                        }
+                                                            const confirmed =
+                                                                await confirm({
+                                                                    title:
+                                                                        "Delete transfer?",
+                                                                    message:
+                                                                        "This will remove the transfer from your active history.",
+                                                                    confirmLabel:
+                                                                        "Delete",
+                                                                    tone:
+                                                                        "danger"
+                                                                });
 
-                                        <button
-                                            onClick={() => {
+                                                            if (
+                                                                !confirmed
+                                                            ) {
+                                                                return;
+                                                            }
 
-                                                setEditingTransferId(
-                                                    transfer.id
-                                                );
+                                                            await softDeleteTransfer(
+                                                                transfer.id
+                                                            );
 
-                                                setEditAmount(
-                                                    transfer.amount.toString()
-                                                );
+                                                            toast({
+                                                                type: "success",
+                                                                message:
+                                                                    "Transfer deleted."
+                                                            });
+                                                        }}
+                                                    >
+                                                        <Trash2
+                                                            className="h-4 w-4"
+                                                        />
+                                                    </button>
 
-                                                setEditNotes(
-                                                    transfer.notes ??
-                                                    ""
-                                                );
-                                            }}
-                                        >
-                                            Edit
-                                        </button>
+                                                </div>
 
-                                        <button
-                                            onClick={() => {
+                                            </div>
+                                        </>
+                                    )
+                            }
 
-                                                const confirmed =
-                                                    confirm(
-                                                        "Delete transfer?"
-                                                    );
+                        </div>
+                    )
+                )}
 
-                                                if (
-                                                    !confirmed
-                                                ) {
-                                                    return;
-                                                }
+            </div>
 
-                                                softDeleteTransfer(
-                                                    transfer.id
-                                                );
-                                            }}
-                                        >
-                                            Delete
-                                        </button>
-
-                                    </>
-                                )
-                        }
-
-                    </li>
-                )
-            )}
-
-        </ul>
+        </section>
     );
 }

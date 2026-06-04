@@ -17,6 +17,9 @@ import {
     Wallet
 } from "lucide-react";
 
+import Footer
+    from "./components/Footer";
+
 import DashboardPage
     from "./pages/DashboardPage";
 
@@ -158,66 +161,69 @@ function App() {
                             )}
                         </nav>
                     </aside>
+                    <div className="flex min-w-0 flex-1 flex-col">
+                        <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+                            <Routes>
 
-                    <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
-                        <Routes>
+                                <Route
+                                    path="/"
+                                    element={
+                                        <DashboardPage />
+                                    }
+                                />
 
-                            <Route
-                                path="/"
-                                element={
-                                    <DashboardPage />
-                                }
-                            />
+                                <Route
+                                    path="/accounts"
+                                    element={
+                                        <AccountsPage />
+                                    }
+                                />
 
-                            <Route
-                                path="/accounts"
-                                element={
-                                    <AccountsPage />
-                                }
-                            />
+                                <Route
+                                    path="/expenses"
+                                    element={
+                                        <ExpensesPage />
+                                    }
+                                />
 
-                            <Route
-                                path="/expenses"
-                                element={
-                                    <ExpensesPage />
-                                }
-                            />
+                                <Route
+                                    path="/incomes"
+                                    element={
+                                        <IncomesPage />
+                                    }
+                                />
 
-                            <Route
-                                path="/incomes"
-                                element={
-                                    <IncomesPage />
-                                }
-                            />
+                                <Route
+                                    path="/transfers"
+                                    element={
+                                        <TransfersPage />
+                                    }
+                                />
 
-                            <Route
-                                path="/transfers"
-                                element={
-                                    <TransfersPage />
-                                }
-                            />
+                                <Route
+                                    path="/obligations"
+                                    element={
+                                        <ObligationsPage />
+                                    }
+                                />
 
-                            <Route
-                                path="/obligations"
-                                element={
-                                    <ObligationsPage />
-                                }
-                            />
+                                <Route
+                                    path="/categories"
+                                    element={
+                                        <CategoriesPage />
+                                    }
+                                />
+                                <Route
+                                    path="/settings"
+                                    element={
+                                        <SettingsPage />
+                                    }
+                                />
+                            </Routes>
+                        </main>
+                        <Footer />
 
-                            <Route
-                                path="/categories"
-                                element={
-                                    <CategoriesPage />
-                                }
-                            />
-                            <Route
-                                path="/settings"
-                                element={
-                                    <SettingsPage />
-                                }
-                            />
-                        </Routes>
-                    </main>
+                    </div>
                 </div>
             </div>
 

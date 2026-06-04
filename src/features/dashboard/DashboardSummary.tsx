@@ -80,17 +80,17 @@ export default function DashboardSummary() {
 
             <div>
                 Actual Balance:
-                ₱{actualBalance}
+                ₱{actualBalance.toFixed(2)}
             </div>
 
             <div>
                 Reserved Amount:
-                ₱{reservedAmount}
+                ₱{reservedAmount.toFixed(2)}
             </div>
 
             <div>
                 Available To Spend:
-                ₱{availableBalance}
+                ₱{availableBalance.toFixed(2)}
             </div>
 
         </div>

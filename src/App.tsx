@@ -25,106 +25,136 @@ import TransfersPage
 import ObligationsPage
     from "./pages/ObligationsPage";
 
+import CategoriesPage
+    from "./pages/CategoriesPage";
+
+import SettingsPage
+    from "./pages/SettingsPage";
+
 function App() {
-  useEffect(() => {
-    seedDefaultCategories();
-  }, []);
+    useEffect(() => {
+        seedDefaultCategories();
+    }, []);
 
-return (
-    <BrowserRouter>
+    return (
+        <BrowserRouter>
 
-        <h1>
-            Tantiya V2
-        </h1>
+            <h1>
+                Tantiya V2
+            </h1>
 
-        <nav>
+            <nav>
 
-            <Link to="/">
-                Dashboard
-            </Link>
+                <Link to="/">
+                    Dashboard
+                </Link>
 
-            {" | "}
+                {" | "}
 
-            <Link to="/accounts">
-                Accounts
-            </Link>
+                <Link to="/accounts">
+                    Accounts
+                </Link>
 
-            {" | "}
+                {" | "}
 
-            <Link to="/expenses">
-                Expenses
-            </Link>
+                <Link to="/categories">
+                    Categories
+                </Link>
 
-            {" | "}
+                {" | "}
 
-            <Link to="/incomes">
-                Incomes
-            </Link>
+                <Link to="/expenses">
+                    Expenses
+                </Link>
 
-            {" | "}
+                {" | "}
 
-            <Link to="/transfers">
-                Transfers
-            </Link>
+                <Link to="/incomes">
+                    Incomes
+                </Link>
 
-            {" | "}
+                {" | "}
 
-            <Link to="/obligations">
-                Obligations
-            </Link>
+                <Link to="/transfers">
+                    Transfers
+                </Link>
 
-        </nav>
+                {" | "}
 
-        <hr />
+                <Link to="/obligations">
+                    Obligations
+                </Link>
 
-        <Routes>
+                {" | "}
 
-            <Route
-                path="/"
-                element={
-                    <DashboardPage />
-                }
-            />
+                <Link to="/settings">
+                    Settings
+                </Link>
 
-            <Route
-                path="/accounts"
-                element={
-                    <AccountsPage />
-                }
-            />
+            </nav>
 
-            <Route
-                path="/expenses"
-                element={
-                    <ExpensesPage />
-                }
-            />
+            <hr />
 
-            <Route
-                path="/incomes"
-                element={
-                    <IncomesPage />
-                }
-            />
+            <Routes>
 
-            <Route
-                path="/transfers"
-                element={
-                    <TransfersPage />
-                }
-            />
+                <Route
+                    path="/"
+                    element={
+                        <DashboardPage />
+                    }
+                />
 
-            <Route
-                path="/obligations"
-                element={
-                    <ObligationsPage />
-                }
-            />
+                <Route
+                    path="/accounts"
+                    element={
+                        <AccountsPage />
+                    }
+                />
 
-        </Routes>
+                <Route
+                    path="/expenses"
+                    element={
+                        <ExpensesPage />
+                    }
+                />
 
-    </BrowserRouter>
-);
+                <Route
+                    path="/incomes"
+                    element={
+                        <IncomesPage />
+                    }
+                />
+
+                <Route
+                    path="/transfers"
+                    element={
+                        <TransfersPage />
+                    }
+                />
+
+                <Route
+                    path="/obligations"
+                    element={
+                        <ObligationsPage />
+                    }
+                />
+
+                <Route
+                    path="/categories"
+                    element={
+                        <CategoriesPage />
+                    }
+                />
+                <Route
+                    path="/settings"
+                    element={
+                        <SettingsPage />
+                    }
+                />
+            </Routes>
+
+        </BrowserRouter>
+    );
 }
 
 export default App;

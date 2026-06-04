@@ -37,12 +37,24 @@ export default function UpcomingObligations() {
 
                 return (
                     status ===
-                        "Prepare Funds" ||
+                    "Prepare Funds" ||
                     status ===
-                        "Due Soon"
+                    "Due Soon"
                 );
             }
         ) ?? [];
+
+
+    const upcomingTotal =
+        upcoming.reduce(
+            (
+                total,
+                obligation
+            ) =>
+                total +
+                obligation.amount,
+            0
+        );
 
     if (
         upcoming.length === 0
@@ -68,7 +80,23 @@ export default function UpcomingObligations() {
             <h3>
                 Upcoming Obligations
             </h3>
+            <div>
+                Upcoming Count:
+                {upcoming.length}
+            </div>
 
+            <div>
+                Upcoming Total:
+                ₱{
+                    upcomingTotal.toLocaleString(
+                        undefined,
+                        {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }
+                    )
+                }
+            </div>
             <ul>
 
                 {upcoming.map(

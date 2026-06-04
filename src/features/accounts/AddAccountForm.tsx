@@ -37,9 +37,12 @@ export default function AddAccountForm() {
 
             <input
                 type="number"
+                step="0.01"
                 value={openingBalance}
                 onChange={(e) =>
-                    setOpeningBalance(e.target.value)
+                    setOpeningBalance(
+                        e.target.value
+                    )
                 }
                 placeholder="Opening Balance"
             />

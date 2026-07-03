@@ -10,6 +10,7 @@ import {
 
 import {
   ArrowLeftRight,
+  BookOpen,
   CalendarCheck,
   FileChartColumn,
   LayoutDashboard,
@@ -34,6 +35,9 @@ import ObligationsPage from "./pages/ObligationsPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
+import GuidePage
+  from "./pages/GuidePage";
+
 
 const navItems = [
   {
@@ -42,19 +46,24 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
+    to: "/guide",
+    label: "Guide",
+    icon: BookOpen,
+  },
+  {
     to: "/accounts",
     label: "Accounts",
     icon: Wallet,
   },
   {
-    to: "/expenses",
-    label: "Expenses",
-    icon: Receipt,
-  },
-  {
     to: "/categories",
     label: "Categories",
     icon: Tags,
+  },
+  {
+    to: "/expenses",
+    label: "Expenses",
+    icon: Receipt,
   },
   {
     to: "/incomes",
@@ -155,7 +164,10 @@ function AppLayout() {
           <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
             <Routes>
               <Route path="/dashboard" element={<DashboardPage />} />
-
+              <Route
+                path="/guide"
+                element={<GuidePage />}
+              />
               <Route path="/accounts" element={<AccountsPage />} />
               <Route path="/expenses" element={<ExpensesPage />} />
               <Route path="/categories" element={<CategoriesPage />} />

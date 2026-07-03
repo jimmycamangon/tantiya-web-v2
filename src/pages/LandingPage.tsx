@@ -49,6 +49,13 @@ export default function LandingPage() {
                         </Link>
 
                         <ImportBackupButton />
+                        |
+                        <Link
+                            to="/guide"
+                            className="rounded-lg px-5 py-3 text-sm font-medium text-stone-900 transition hover:bg-stone-200 border border-stone-400"
+                        >
+                            Learn More
+                        </Link>
 
                     </div>
 

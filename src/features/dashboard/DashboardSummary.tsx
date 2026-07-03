@@ -1,5 +1,6 @@
 import { useEffect, useState }
     from "react";
+import { Receipt } from "lucide-react";
 
 import { getAccounts }
     from "../accounts/account.service";
@@ -21,6 +22,8 @@ import {
 
 import { useLiveQuery }
     from "dexie-react-hooks";
+
+import { Link } from "react-router-dom";
 
 function formatCurrency(
     amount: number
@@ -112,7 +115,8 @@ export default function DashboardSummary() {
             value: availableBalance,
             tone: availableBalance >= 0
                 ? "text-emerald-700"
-                : "text-red-700"
+                : "text-red-700",
+            action: true
         }
     ];
 
@@ -124,12 +128,29 @@ export default function DashboardSummary() {
                         key={stat.label}
                         className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm"
                     >
-                        <p className="text-sm font-medium text-stone-500">
-                            {stat.label}
-                        </p>
+
+                        <div className="flex items-center justify-between">
+
+                            <p className="text-sm font-medium text-stone-500">
+                                {stat.label}
+                            </p>
+
+                            {stat.action && (
+                                <Link
+                                    to="/expenses"
+                                    className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-red-600 hover:text-red-700"
+                                >
+                                    <Receipt className="h-4 w-4" />
+                                    Add Expense
+                                </Link>
+                            )}
+
+                        </div>
+
                         <p className={`mt-3 text-2xl font-semibold ${stat.tone}`}>
                             {formatCurrency(stat.value)}
                         </p>
+
                     </section>
                 )
             )}

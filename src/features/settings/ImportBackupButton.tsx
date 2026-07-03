@@ -24,6 +24,8 @@ import type { Income }
     from "../../types/income";
 import type { Obligation }
     from "../../types/obligation";
+import type { ObligationPayment }
+    from "../../types/obligationPayment";
 import type { Transfer }
     from "../../types/transfer";
 
@@ -36,6 +38,7 @@ type BackupData = {
     obligations?: Obligation[];
     transfers?: Transfer[];
     adjustments?: Adjustment[];
+    obligationPayments?: ObligationPayment[];
 };
 
 function getTableData<Key extends keyof BackupData>(
@@ -120,7 +123,8 @@ export default function ImportBackupButton() {
                     db.expenses,
                     db.obligations,
                     db.transfers,
-                    db.adjustments
+                    db.adjustments,
+                    db.obligationPayments
                 ],
                 async () => {
                     await db.accounts.clear();
@@ -131,6 +135,7 @@ export default function ImportBackupButton() {
                     await db.obligations.clear();
                     await db.transfers.clear();
                     await db.adjustments.clear();
+                    await db.obligationPayments.clear();
 
                     await db.accounts.bulkAdd(
                         getTableData(backup, "accounts")
@@ -162,6 +167,10 @@ export default function ImportBackupButton() {
 
                     await db.adjustments.bulkAdd(
                         getTableData(backup, "adjustments")
+                    );
+
+                    await db.obligationPayments.bulkAdd(
+                        getTableData(backup, "obligationPayments")
                     );
                 }
             );

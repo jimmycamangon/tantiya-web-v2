@@ -4,7 +4,7 @@ import { useState }
 
 import { useLiveQuery }
     from "dexie-react-hooks";
-import { Archive, Check, Pencil, X }
+import { Archive, Check, Pencil, Scale, X }
     from "lucide-react";
 import {
     useConfirmDialog,
@@ -18,6 +18,8 @@ import {
     archiveAccount
 } from "./account.service";
 import { calculateAccountBalance } from "./accountBalance.service";
+
+import AdjustBalanceForm from "../adjustments/AdjustBalanceForm";
 
 function formatCurrency(
     amount: number
@@ -43,6 +45,11 @@ export default function AccountList() {
     const [
         editName,
         setEditName
+    ] = useState("");
+
+    const [
+        adjustingAccountId,
+        setAdjustingAccountId
     ] = useState("");
 
     const confirm =
@@ -180,6 +187,25 @@ export default function AccountList() {
                                         <div className="flex gap-2 sm:justify-end">
                                             <button
                                                 type="button"
+                                                title="Adjust balance"
+                                                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-stone-300 bg-white text-stone-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                                                onClick={() =>
+                                                    setAdjustingAccountId(
+                                                        adjustingAccountId ===
+                                                            account.id
+                                                            ? ""
+                                                            : account.id
+                                                    )
+                                                }
+                                            >
+                                                <Scale
+                                                    aria-hidden="true"
+                                                    className="h-4 w-4"
+                                                />
+                                            </button>
+
+                                            <button
+                                                type="button"
                                                 title="Edit account"
                                                 className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-stone-300 bg-white text-stone-600 transition hover:bg-stone-50 hover:text-stone-950"
                                                 onClick={() => {
@@ -238,6 +264,20 @@ export default function AccountList() {
                                     </>
                                 )
                         }
+
+                        {adjustingAccountId ===
+                            account.id && (
+                                <div className="sm:col-span-3">
+                                    <AdjustBalanceForm
+                                        accountId={account.id}
+                                        accountName={account.name}
+                                        currentBalance={account.balance}
+                                        onClose={() =>
+                                            setAdjustingAccountId("")
+                                        }
+                                    />
+                                </div>
+                            )}
 
                     </div>
                 )

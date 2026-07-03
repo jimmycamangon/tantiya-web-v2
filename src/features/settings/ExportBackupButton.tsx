@@ -52,6 +52,9 @@ export default function ExportBackupButton() {
                 adjustments:
                     await db.adjustments.toArray(),
 
+                obligationPayments:
+                    await db.obligationPayments.toArray(),
+
                 cutoffs:
                     await db.cutoffs.toArray()
             };

@@ -15,6 +15,10 @@ import {
     calculateReservedAmount
 } from "../obligations/calculateReservedAmount";
 
+import {
+    getPaidPeriodKeys
+} from "../obligations/obligationPayment.service";
+
 import { useLiveQuery }
     from "dexie-react-hooks";
 
@@ -44,9 +48,16 @@ export default function DashboardSummary() {
             []
         );
 
+    const paidPeriodKeys =
+        useLiveQuery(
+            () => getPaidPeriodKeys(),
+            []
+        );
+
     const reservedAmount =
         calculateReservedAmount(
-            obligations ?? []
+            obligations ?? [],
+            paidPeriodKeys ?? new Map()
         );
 
     useEffect(() => {

@@ -2,8 +2,10 @@ import { useState } from "react";
 
 import {
     Check,
+    HandCoins,
     Pencil,
     Trash2,
+    Undo2,
     X
 } from "lucide-react";
 
@@ -22,12 +24,19 @@ import {
 } from "./obligation.service";
 
 import {
-    getDaysUntilDue
-} from "./getDaysUntilDue";
+    getObligationDueInfo
+} from "./obligationSchedule";
 
 import {
     getObligationStatus
 } from "./getObligationStatus";
+
+import {
+    getPaidPeriodKeys,
+    unmarkObligationPaid
+} from "./obligationPayment.service";
+
+import MarkPaidForm from "./MarkPaidForm";
 
 function formatCurrency(
     amount: number
@@ -88,6 +97,9 @@ function getStatusClasses(
 
     switch (status) {
 
+        case "Paid":
+            return "bg-emerald-600 text-white";
+
         case "Overdue":
             return "bg-red-100 text-red-700";
 
@@ -110,6 +122,18 @@ export default function ObligationList() {
             () => getObligations(),
             []
         );
+
+    const paidPeriodKeys =
+        useLiveQuery(
+            () => getPaidPeriodKeys(),
+            []
+        );
+
+    const [
+        markingPaidId,
+        setMarkingPaidId
+    ] = useState("");
+
     const [
         editingObligationId,
         setEditingObligationId
@@ -175,15 +199,23 @@ export default function ObligationList() {
                 {obligations.map(
                     obligation => {
 
-                        const daysUntilDue =
-                            getDaysUntilDue(
-                                obligation.dueDay
+                        const dueInfo =
+                            getObligationDueInfo(
+                                obligation,
+                                paidPeriodKeys?.get(
+                                    obligation.id
+                                ) ?? new Set()
                             );
 
+                        const daysUntilDue =
+                            dueInfo.daysUntilDue;
+
                         const status =
-                            getObligationStatus(
-                                daysUntilDue
-                            );
+                            dueInfo.paidForCurrentPeriod
+                                ? "Paid"
+                                : getObligationStatus(
+                                    daysUntilDue
+                                );
 
                         return (
                             <div
@@ -343,7 +375,9 @@ export default function ObligationList() {
                                                             {
                                                                 daysUntilDue < 0
                                                                     ? `${Math.abs(daysUntilDue)} days overdue`
-                                                                    : `Due in ${daysUntilDue} days`
+                                                                    : daysUntilDue === 0
+                                                                        ? "Due today"
+                                                                        : `${dueInfo.paidForCurrentPeriod ? "Next due" : "Due"} in ${daysUntilDue} days`
                                                             }
                                                         </p>
 
@@ -358,6 +392,67 @@ export default function ObligationList() {
                                                     </span>
 
                                                     <div className="flex gap-2">
+
+                                                        {!dueInfo.paidForCurrentPeriod && (
+                                                            <button
+                                                                type="button"
+                                                                title="Mark as paid"
+                                                                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-white px-3 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
+                                                                onClick={() =>
+                                                                    setMarkingPaidId(
+                                                                        markingPaidId ===
+                                                                            obligation.id
+                                                                            ? ""
+                                                                            : obligation.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                <HandCoins
+                                                                    aria-hidden="true"
+                                                                    className="h-4 w-4"
+                                                                />
+                                                                Mark paid
+                                                            </button>
+                                                        )}
+
+                                                        {dueInfo.paidForCurrentPeriod &&
+                                                            dueInfo.currentPeriodKey && (
+                                                                <button
+                                                                    type="button"
+                                                                    title="Undo payment"
+                                                                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 text-sm font-medium text-stone-600 transition hover:bg-stone-50"
+                                                                    onClick={async () => {
+
+                                                                        const confirmed =
+                                                                            await confirm({
+                                                                                title: "Undo payment?",
+                                                                                message: `${obligation.name} will show as unpaid again. Any expense recorded with it will be removed.`,
+                                                                                confirmLabel: "Undo",
+                                                                                tone: "warning"
+                                                                            });
+
+                                                                        if (!confirmed) {
+                                                                            return;
+                                                                        }
+
+                                                                        await unmarkObligationPaid(
+                                                                            obligation.id,
+                                                                            dueInfo.currentPeriodKey!
+                                                                        );
+
+                                                                        toast({
+                                                                            type: "success",
+                                                                            message: "Payment undone."
+                                                                        });
+                                                                    }}
+                                                                >
+                                                                    <Undo2
+                                                                        aria-hidden="true"
+                                                                        className="h-4 w-4"
+                                                                    />
+                                                                    Undo
+                                                                </button>
+                                                            )}
 
                                                         <button
                                                             type="button"
@@ -429,6 +524,16 @@ export default function ObligationList() {
                                                     </div>
 
                                                 </div>
+
+                                                {markingPaidId ===
+                                                    obligation.id && (
+                                                        <MarkPaidForm
+                                                            obligation={obligation}
+                                                            onClose={() =>
+                                                                setMarkingPaidId("")
+                                                            }
+                                                        />
+                                                    )}
                                             </>
                                         )
                                 }

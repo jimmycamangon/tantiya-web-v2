@@ -12,6 +12,10 @@ import {
     calculateReservedAmount
 } from "../obligations/calculateReservedAmount";
 
+import {
+    getPaidPeriodKeys
+} from "../obligations/obligationPayment.service";
+
 export async function calculateAvailableBalance(
     accounts: Account[],
     obligations: Obligation[]
@@ -29,9 +33,13 @@ export async function calculateAvailableBalance(
         totalBalance += balance;
     }
 
+    const paidPeriodKeys =
+        await getPaidPeriodKeys();
+
     const reservedAmount =
         calculateReservedAmount(
-            obligations
+            obligations,
+            paidPeriodKeys
         );
 
     return (

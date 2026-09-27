@@ -69,38 +69,47 @@ export async function markObligationPaid(
         );
     }
 
-    let expenseId: string | undefined;
+    // All writes succeed together or none do, so a failed
+    // payment never leaves an orphan expense behind.
+    return db.transaction(
+        "rw",
+        [db.expenses, db.obligationPayments, db.obligations],
+        async () => {
 
-    if (options.categoryId) {
-        const expense = await createExpense(
-            options.amount,
-            options.categoryId,
-            obligation.accountId,
-            `${obligation.name} (obligation)`
-        );
+            let expenseId: string | undefined;
 
-        expenseId = expense.id;
-    }
+            if (options.categoryId) {
+                const expense = await createExpense(
+                    options.amount,
+                    options.categoryId,
+                    obligation.accountId,
+                    `${obligation.name} (obligation)`
+                );
 
-    const payment: ObligationPayment = {
-        id: crypto.randomUUID(),
-        obligationId: obligation.id,
-        periodKey: dueInfo.periodKey,
-        amount: options.amount,
-        paidDate: new Date().toISOString(),
-        expenseId,
-        createdAt: new Date().toISOString(),
-    };
+                expenseId = expense.id;
+            }
 
-    await db.obligationPayments.add(payment);
+            const payment: ObligationPayment = {
+                id: crypto.randomUUID(),
+                obligationId: obligation.id,
+                periodKey: dueInfo.periodKey,
+                amount: options.amount,
+                paidDate: new Date().toISOString(),
+                expenseId,
+                createdAt: new Date().toISOString(),
+            };
 
-    if (obligation.recurrenceType === "one_time") {
-        await db.obligations.update(obligation.id, {
-            active: false,
-        });
-    }
+            await db.obligationPayments.add(payment);
 
-    return payment;
+            if (obligation.recurrenceType === "one_time") {
+                await db.obligations.update(obligation.id, {
+                    active: false,
+                });
+            }
+
+            return payment;
+        }
+    );
 }
 
 /**
@@ -122,9 +131,47 @@ export async function unmarkObligationPaid(
         return;
     }
 
-    if (payment.expenseId) {
-        await softDeleteExpense(payment.expenseId);
+    await removePayment(payment);
+}
+
+/**
+ * Undoes the most recent payment of an obligation,
+ * including one made in advance for a future period.
+ */
+export async function undoLatestObligationPayment(
+    obligationId: string
+): Promise<void> {
+
+    const payments = await db.obligationPayments
+        .where("obligationId")
+        .equals(obligationId)
+        .toArray();
+
+    const latest = payments.sort((a, b) =>
+        b.createdAt.localeCompare(a.createdAt)
+    )[0];
+
+    if (!latest) {
+        return;
     }
 
-    await db.obligationPayments.delete(payment.id);
+    await removePayment(latest);
+}
+
+/** Deletes a payment and soft-deletes its linked expense together. */
+async function removePayment(
+    payment: ObligationPayment
+): Promise<void> {
+
+    await db.transaction(
+        "rw",
+        [db.expenses, db.obligationPayments],
+        async () => {
+            if (payment.expenseId) {
+                await softDeleteExpense(payment.expenseId);
+            }
+
+            await db.obligationPayments.delete(payment.id);
+        }
+    );
 }

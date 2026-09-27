@@ -8,7 +8,13 @@ export interface ObligationDueInfo {
     daysUntilDue: number;
     /** The recurrence period the next payment should cover. */
     periodKey: string;
-    /** True when the period containing today is already paid. */
+    /**
+     * True when the most recent period is paid AND the next
+     * unpaid due date is still outside the prep window.
+     * Once the next due date is within PREP_WINDOW_DAYS it
+     * becomes false so the bill is reserved, shown as upcoming,
+     * and can be paid in advance.
+     */
     paidForCurrentPeriod: boolean;
     /**
      * Key of the period containing the most recent due date,
@@ -19,6 +25,9 @@ export interface ObligationDueInfo {
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+/** Days before a due date when funds should be set aside. */
+export const PREP_WINDOW_DAYS = 7;
 
 function startOfDay(date: Date): Date {
     const result = new Date(date);
@@ -93,9 +102,9 @@ function getOccurrence(
     }
 
     if (recurrenceType === "yearly") {
-        const month = new Date(
-            obligation.createdAt
-        ).getMonth();
+        const month = obligation.dueMonth
+            ? obligation.dueMonth - 1
+            : new Date(obligation.createdAt).getMonth();
 
         const candidate = clampDayToMonth(
             ref.getFullYear(),
@@ -231,10 +240,15 @@ export function getObligationDueInfo(
         "after"
     );
 
-    if (
+    // Skip every period already paid in advance
+    // (capped to avoid an endless loop on bad data).
+    for (
+        let guard = 0;
+        guard < 60 &&
         paidPeriodKeys.has(
             getPeriodKey(obligation, next)
-        )
+        );
+        guard++
     ) {
         next = getOccurrence(
             obligation,
@@ -243,11 +257,15 @@ export function getObligationDueInfo(
         );
     }
 
+    const daysUntilDue = diffDays(next, today);
+
     return {
         dueDate: next,
-        daysUntilDue: diffDays(next, today),
+        daysUntilDue,
         periodKey: getPeriodKey(obligation, next),
-        paidForCurrentPeriod: previousPaid,
+        paidForCurrentPeriod:
+            previousPaid &&
+            daysUntilDue > PREP_WINDOW_DAYS,
         currentPeriodKey,
     };
 }

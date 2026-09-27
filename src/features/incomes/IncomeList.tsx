@@ -12,12 +12,22 @@ import {
     useToast
 } from "../../components/AppFeedback";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { db } from "../../db/database";
+import HistoryFilters from "../../components/HistoryFilters";
+import {
+    DEFAULT_HISTORY_FILTERS,
+    HISTORY_PAGE_SIZE,
+    matchesPeriod,
+    matchesSearch,
+    sortNewestFirst,
+} from "../../utils/historyFilter";
+import type { HistoryFilterState } from "../../utils/historyFilter";
 import {
     softDeleteIncome,
     updateIncome,
 } from "./income.service";
+import { toDateKey, todayKey } from "../../utils/entryDate";
 
 
 function formatCurrency(
@@ -65,6 +75,27 @@ export default function IncomeList() {
     const [editNotes, setEditNotes] =
         useState("");
 
+    const [editDate, setEditDate] =
+        useState("");
+
+    const [filters, setFilters] =
+        useState<HistoryFilterState>(DEFAULT_HISTORY_FILTERS);
+
+    const [visibleCount, setVisibleCount] =
+        useState(HISTORY_PAGE_SIZE);
+
+    // Reset paging whenever a filter changes.
+    function updateFilters(next: HistoryFilterState) {
+        setFilters(next);
+        setVisibleCount(HISTORY_PAGE_SIZE);
+    }
+
+    const accounts =
+        useLiveQuery(
+            () => db.accounts.toArray(),
+            []
+        ) ?? [];
+
     const incomesWithDetails =
         useLiveQuery(async () => {
 
@@ -89,6 +120,23 @@ export default function IncomeList() {
             }));
 
         }, []);
+
+    const filteredIncomes = useMemo(
+        () =>
+            sortNewestFirst(
+                (incomesWithDetails ?? []).filter(income =>
+                    matchesSearch(
+                        filters.search,
+                        income.notes,
+                        income.accountName
+                    ) &&
+                    matchesPeriod(income.date, filters.period) &&
+                    (filters.option === "all" ||
+                        income.accountId === filters.option)
+                )
+            ),
+        [incomesWithDetails, filters]
+    );
 
 
     if (
@@ -128,8 +176,28 @@ export default function IncomeList() {
                 </p>
             </div>
 
-            <div className="divide-y divide-stone-100 overflow-hidden rounded-md border border-stone-200">
-                {incomesWithDetails?.map(
+            <HistoryFilters
+                filters={filters}
+                onChange={updateFilters}
+                searchPlaceholder="Search incomes..."
+                options={accounts.map(account => ({
+                    value: account.id,
+                    label: account.name,
+                }))}
+                allOptionLabel="All Accounts"
+                shownCount={Math.min(visibleCount, filteredIncomes.length)}
+                totalCount={filteredIncomes.length}
+                itemLabel={["income", "incomes"]}
+            />
+
+            {filteredIncomes.length === 0 && (
+                <div className="rounded-md border border-dashed border-stone-300 bg-stone-50 px-4 py-6 text-sm text-stone-500">
+                    No incomes match your filters.
+                </div>
+            )}
+
+            <div className="divide-y divide-stone-100 overflow-hidden rounded-md border border-stone-200 empty:hidden">
+                {filteredIncomes.slice(0, visibleCount).map(
                     income => (
                         <div
                             key={income.id}
@@ -139,11 +207,17 @@ export default function IncomeList() {
 
                                 <div className="grid gap-3 lg:grid-cols-[140px_120px_1fr_auto] lg:items-center">
 
-                                    <p className="text-stone-500">
-                                        {formatDate(
-                                            income.date
-                                        )}
-                                    </p>
+                                    <input
+                                        type="date"
+                                        value={editDate}
+                                        max={todayKey()}
+                                        onChange={(e) =>
+                                            setEditDate(
+                                                e.target.value
+                                            )
+                                        }
+                                        className="h-10 rounded-md border border-stone-300 bg-white px-2 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                                    />
 
                                     <input
                                         type="number"
@@ -182,7 +256,8 @@ export default function IncomeList() {
                                                         Number(
                                                             editAmount
                                                         ),
-                                                        editNotes
+                                                        editNotes,
+                                                        editDate
                                                     );
 
                                                     toast({
@@ -276,6 +351,10 @@ export default function IncomeList() {
                                                     setEditNotes(
                                                         income.notes ?? ""
                                                     );
+
+                                                    setEditDate(
+                                                        toDateKey(income.date)
+                                                    );
                                                 }}
                                             >
                                                 <Pencil
@@ -331,6 +410,20 @@ export default function IncomeList() {
                     )
                 )}
             </div>
+
+            {filteredIncomes.length > visibleCount && (
+                <div className="mt-4 flex justify-center">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setVisibleCount(prev => prev + 50)
+                        }
+                        className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium"
+                    >
+                        Load More
+                    </button>
+                </div>
+            )}
 
         </section>
     );

@@ -11,6 +11,12 @@ export interface Obligation {
 
   dueDay: number;
 
+  /**
+   * Month of the year (1-12) for yearly obligations.
+   * Older records may not have it; they fall back to createdAt.
+   */
+  dueMonth?: number;
+
   accountId: string;
 
   fundingRule: FundingRule;

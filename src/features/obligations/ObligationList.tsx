@@ -33,7 +33,7 @@ import {
 
 import {
     getPaidPeriodKeys,
-    unmarkObligationPaid
+    undoLatestObligationPayment
 } from "./obligationPayment.service";
 
 import MarkPaidForm from "./MarkPaidForm";
@@ -70,6 +70,37 @@ function formatRecurrence(
         default:
             return value;
     }
+}
+
+const WEEKDAYS = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+];
+
+function formatDueDay(
+    recurrenceType: string,
+    dueDay: number,
+    dueMonth?: number
+) {
+    if (recurrenceType === "weekly") {
+        return `Every ${WEEKDAYS[dueDay - 1] ?? `day ${dueDay}`}`;
+    }
+
+    if (recurrenceType === "yearly" && dueMonth) {
+        const month = new Date(2000, dueMonth - 1, 1).toLocaleString(
+            "en-US",
+            { month: "long" }
+        );
+
+        return `Every ${month} ${dueDay}`;
+    }
+
+    return `Due Day ${dueDay}`;
 }
 
 function formatFundingRule(
@@ -151,6 +182,10 @@ export default function ObligationList() {
         setEditDueDay] =
         useState("");
 
+    const [editDueMonth,
+        setEditDueMonth] =
+        useState("");
+
     const confirm =
         useConfirmDialog();
 
@@ -230,7 +265,13 @@ export default function ObligationList() {
                                         obligation.id
                                         ? (
                                             <>
-                                                <div className="grid gap-3 lg:grid-cols-[1fr_140px_100px_auto_auto] lg:items-center">
+                                                <div
+                                                    className={`grid gap-3 lg:items-center ${
+                                                        obligation.recurrenceType === "yearly"
+                                                            ? "lg:grid-cols-[1fr_140px_140px_100px_auto_auto]"
+                                                            : "lg:grid-cols-[1fr_140px_100px_auto_auto]"
+                                                    }`}
+                                                >
                                                     <input
                                                         className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                                                         value={
@@ -259,7 +300,16 @@ export default function ObligationList() {
                                                     <input
                                                         type="number"
                                                         min="1"
-                                                        max="31"
+                                                        max={
+                                                            obligation.recurrenceType === "weekly"
+                                                                ? "7"
+                                                                : "31"
+                                                        }
+                                                        title={
+                                                            obligation.recurrenceType === "weekly"
+                                                                ? "1 = Monday … 7 = Sunday"
+                                                                : "Day of the month"
+                                                        }
                                                         className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                                                         value={
                                                             editDueDay
@@ -270,6 +320,32 @@ export default function ObligationList() {
                                                             )
                                                         }
                                                     />
+                                                    {obligation.recurrenceType === "yearly" && (
+                                                        <select
+                                                            title="Due month"
+                                                            className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                                                            value={editDueMonth}
+                                                            onChange={(e) =>
+                                                                setEditDueMonth(
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                        >
+                                                            <option value="">Month</option>
+
+                                                            {Array.from({ length: 12 }, (_, i) => (
+                                                                <option
+                                                                    key={i + 1}
+                                                                    value={i + 1}
+                                                                >
+                                                                    {new Date(2000, i, 1).toLocaleString(
+                                                                        "en-US",
+                                                                        { month: "short" }
+                                                                    )}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    )}
                                                     <button
                                                         type="button"
                                                         title="Save obligation"
@@ -292,7 +368,11 @@ export default function ObligationList() {
                                                                         dueDay:
                                                                             Number(
                                                                                 editDueDay
-                                                                            )
+                                                                            ),
+
+                                                                        ...(obligation.recurrenceType === "yearly"
+                                                                            ? { dueMonth: Number(editDueMonth) }
+                                                                            : {})
                                                                     }
                                                                 );
 
@@ -369,7 +449,11 @@ export default function ObligationList() {
                                                         </p>
 
                                                         <p className="text-sm text-stone-500">
-                                                            Due Day {obligation.dueDay}
+                                                            {formatDueDay(
+                                                                obligation.recurrenceType,
+                                                                obligation.dueDay,
+                                                                obligation.dueMonth
+                                                            )}
                                                         </p>
                                                         <p className="text-sm text-stone-500">
                                                             {
@@ -415,18 +499,19 @@ export default function ObligationList() {
                                                             </button>
                                                         )}
 
-                                                        {dueInfo.paidForCurrentPeriod &&
-                                                            dueInfo.currentPeriodKey && (
+                                                        {(paidPeriodKeys?.get(
+                                                            obligation.id
+                                                        )?.size ?? 0) > 0 && (
                                                                 <button
                                                                     type="button"
-                                                                    title="Undo payment"
+                                                                    title="Undo last payment"
                                                                     className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 text-sm font-medium text-stone-600 transition hover:bg-stone-50"
                                                                     onClick={async () => {
 
                                                                         const confirmed =
                                                                             await confirm({
                                                                                 title: "Undo payment?",
-                                                                                message: `${obligation.name} will show as unpaid again. Any expense recorded with it will be removed.`,
+                                                                                message: `The most recent payment for ${obligation.name} will be removed, along with any expense recorded with it.`,
                                                                                 confirmLabel: "Undo",
                                                                                 tone: "warning"
                                                                             });
@@ -434,10 +519,8 @@ export default function ObligationList() {
                                                                         if (!confirmed) {
                                                                             return;
                                                                         }
-
-                                                                        await unmarkObligationPaid(
-                                                                            obligation.id,
-                                                                            dueInfo.currentPeriodKey!
+                                                                        await undoLatestObligationPayment(
+                                                                            obligation.id
                                                                         );
 
                                                                         toast({
@@ -474,6 +557,10 @@ export default function ObligationList() {
 
                                                                 setEditDueDay(
                                                                     obligation.dueDay.toString()
+                                                                );
+
+                                                                setEditDueMonth(
+                                                                    obligation.dueMonth?.toString() ?? ""
                                                                 );
                                                             }}
                                                         >

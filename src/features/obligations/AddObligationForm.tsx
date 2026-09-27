@@ -30,6 +30,9 @@ export default function AddObligationForm() {
     const [dueDay, setDueDay] =
         useState("");
 
+    const [dueMonth, setDueMonth] =
+        useState("");
+
     const [accountId, setAccountId] =
         useState("");
 
@@ -79,7 +82,8 @@ export default function AddObligationForm() {
             !name ||
             !amount ||
             !dueDay ||
-            !accountId
+            !accountId ||
+            (recurrenceType === "yearly" && !dueMonth)
         ) {
 
             toast({
@@ -99,7 +103,10 @@ export default function AddObligationForm() {
                 recurrenceType,
                 Number(dueDay),
                 accountId,
-                fundingRule
+                fundingRule,
+                recurrenceType === "yearly"
+                    ? Number(dueMonth)
+                    : undefined
             );
 
             toast({
@@ -111,6 +118,7 @@ export default function AddObligationForm() {
             setName("");
             setAmount("");
             setDueDay("");
+            setDueMonth("");
 
         } catch (error) {
 
@@ -178,21 +186,44 @@ export default function AddObligationForm() {
 
                 <label className="grid gap-1">
                     <span className="text-xs font-medium text-stone-500">
-                        Due Day
+                        {recurrenceType === "weekly"
+                            ? "Due Weekday"
+                            : "Due Day"}
                     </span>
 
-                    <input
-                        type="number"
-                        min="1"
-                        max="31"
-                        value={dueDay}
-                        onChange={(e) =>
-                            setDueDay(
-                                e.target.value
-                            )
-                        }
-                        className="h-10 rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-                    />
+                    {recurrenceType === "weekly" ? (
+                        <select
+                            value={dueDay}
+                            onChange={(e) =>
+                                setDueDay(
+                                    e.target.value
+                                )
+                            }
+                            className="h-10 rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                        >
+                            <option value="">Select day</option>
+                            <option value="1">Monday</option>
+                            <option value="2">Tuesday</option>
+                            <option value="3">Wednesday</option>
+                            <option value="4">Thursday</option>
+                            <option value="5">Friday</option>
+                            <option value="6">Saturday</option>
+                            <option value="7">Sunday</option>
+                        </select>
+                    ) : (
+                        <input
+                            type="number"
+                            min="1"
+                            max="31"
+                            value={dueDay}
+                            onChange={(e) =>
+                                setDueDay(
+                                    e.target.value
+                                )
+                            }
+                            className="h-10 rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                        />
+                    )}
                 </label>
 
                 <label className="grid gap-1">
@@ -233,11 +264,13 @@ export default function AddObligationForm() {
 
                     <select
                         value={recurrenceType}
-                        onChange={(e) =>
+                        onChange={(e) => {
                             setRecurrenceType(
                                 e.target.value as RecurrenceType
-                            )
-                        }
+                            );
+                            // Weekly and monthly due days mean different things.
+                            setDueDay("");
+                        }}
                         className="h-10 rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                     >
                         <option value="monthly">Monthly</option>
@@ -247,6 +280,37 @@ export default function AddObligationForm() {
                     </select>
                 </label>
 
+                {recurrenceType === "yearly" && (
+                    <label className="grid gap-1">
+                        <span className="text-xs font-medium text-stone-500">
+                            Due Month
+                        </span>
+
+                        <select
+                            value={dueMonth}
+                            onChange={(e) =>
+                                setDueMonth(
+                                    e.target.value
+                                )
+                            }
+                            className="h-10 rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                        >
+                            <option value="">Select month</option>
+
+                            {Array.from({ length: 12 }, (_, i) => (
+                                <option
+                                    key={i + 1}
+                                    value={i + 1}
+                                >
+                                    {new Date(2000, i, 1).toLocaleString(
+                                        "en-US",
+                                        { month: "long" }
+                                    )}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                )}
                 <label className="grid gap-1">
                     <span className="text-xs font-medium text-stone-500">
                         Funding Rule

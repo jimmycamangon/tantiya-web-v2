@@ -1,3 +1,5 @@
+import { useMemo, useState } from "react";
+
 import { useLiveQuery } from "dexie-react-hooks";
 
 import { Trash2 } from "lucide-react";
@@ -9,10 +11,29 @@ import {
     useToast,
 } from "../../components/AppFeedback";
 
+import HistoryFilters from "../../components/HistoryFilters";
+
+import { db } from "../../db/database";
+
+import {
+    DEFAULT_HISTORY_FILTERS,
+    HISTORY_PAGE_SIZE,
+    matchesPeriod,
+    matchesSearch,
+} from "../../utils/historyFilter";
+
+import type { HistoryFilterState } from "../../utils/historyFilter";
+
 import {
     getAdjustments,
     deleteAdjustment,
 } from "./adjustment.service";
+
+// Opening balances are usually old, so start with everything visible.
+const ADJUSTMENT_DEFAULT_FILTERS: HistoryFilterState = {
+    ...DEFAULT_HISTORY_FILTERS,
+    period: "allTime",
+};
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("en-PH", {
@@ -24,13 +45,44 @@ function formatCurrency(amount: number) {
 export default function AdjustmentHistory() {
 
     const adjustments =
-        useLiveQuery(() => getAdjustments(), []) ?? [];
+        useLiveQuery(() => getAdjustments(), []);
+
+    const accounts =
+        useLiveQuery(() => db.accounts.toArray(), []) ?? [];
 
     const confirm = useConfirmDialog();
 
     const toast = useToast();
 
-    if (adjustments.length === 0) {
+    const [filters, setFilters] =
+        useState<HistoryFilterState>(ADJUSTMENT_DEFAULT_FILTERS);
+
+    const [visibleCount, setVisibleCount] =
+        useState(HISTORY_PAGE_SIZE);
+
+    // Reset paging whenever a filter changes.
+    function updateFilters(next: HistoryFilterState) {
+        setFilters(next);
+        setVisibleCount(HISTORY_PAGE_SIZE);
+    }
+
+    // getAdjustments() already returns newest first.
+    const filteredAdjustments = useMemo(
+        () =>
+            (adjustments ?? []).filter(adjustment =>
+                matchesSearch(
+                    filters.search,
+                    adjustment.reason,
+                    adjustment.accountName
+                ) &&
+                matchesPeriod(adjustment.date, filters.period) &&
+                (filters.option === "all" ||
+                    adjustment.accountId === filters.option)
+            ),
+        [adjustments, filters]
+    );
+
+    if (!adjustments || adjustments.length === 0) {
         return (
             <div className="rounded-md border border-dashed border-stone-300 bg-stone-50 px-4 py-6 text-sm text-stone-500">
                 No adjustments recorded yet.
@@ -39,8 +91,29 @@ export default function AdjustmentHistory() {
     }
 
     return (
-        <div className="divide-y divide-stone-100 overflow-hidden rounded-md border border-stone-200">
-            {adjustments.map(adjustment => (
+        <>
+            <HistoryFilters
+                filters={filters}
+                onChange={updateFilters}
+                searchPlaceholder="Search adjustments..."
+                options={accounts.map(account => ({
+                    value: account.id,
+                    label: account.name,
+                }))}
+                allOptionLabel="All Accounts"
+                shownCount={Math.min(visibleCount, filteredAdjustments.length)}
+                totalCount={filteredAdjustments.length}
+                itemLabel={["adjustment", "adjustments"]}
+            />
+
+            {filteredAdjustments.length === 0 && (
+                <div className="rounded-md border border-dashed border-stone-300 bg-stone-50 px-4 py-6 text-sm text-stone-500">
+                    No adjustments match your filters.
+                </div>
+            )}
+
+            <div className="divide-y divide-stone-100 overflow-hidden rounded-md border border-stone-200 empty:hidden">
+                {filteredAdjustments.slice(0, visibleCount).map(adjustment => (
                 <div
                     key={adjustment.id}
                     className="grid gap-3 px-3 py-3 sm:grid-cols-[1fr_auto_auto] sm:items-center"
@@ -105,7 +178,22 @@ export default function AdjustmentHistory() {
                         </button>
                     </div>
                 </div>
-            ))}
-        </div>
+                ))}
+            </div>
+
+            {filteredAdjustments.length > visibleCount && (
+                <div className="mt-4 flex justify-center">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setVisibleCount(prev => prev + 50)
+                        }
+                        className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium"
+                    >
+                        Load More
+                    </button>
+                </div>
+            )}
+        </>
     );
 }

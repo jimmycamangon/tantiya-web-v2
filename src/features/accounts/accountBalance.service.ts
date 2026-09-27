@@ -1,4 +1,5 @@
 import { db } from "../../db/database";
+import { roundMoney } from "../../utils/money";
 
 export async function calculateAccountBalance(
   accountId: string
@@ -63,7 +64,7 @@ export async function calculateAccountBalance(
           sum + transfer.amount,
         0
       );
-  return (
+  return roundMoney(
     adjustmentTotal +
     incomeTotal -
     expenseTotal -

@@ -3,6 +3,7 @@ import { db } from "../../db/database";
 import type { Adjustment } from "../../types/adjustment";
 
 import { calculateAccountBalance } from "../accounts/accountBalance.service";
+import { roundMoney } from "../../utils/money";
 
 /**
  * Reconciles an account to a real-world balance.
@@ -18,7 +19,7 @@ export async function adjustAccountToBalance(
     const currentBalance =
         await calculateAccountBalance(accountId);
 
-    const delta = targetBalance - currentBalance;
+    const delta = roundMoney(targetBalance - currentBalance);
 
     if (delta === 0) {
         throw new Error(

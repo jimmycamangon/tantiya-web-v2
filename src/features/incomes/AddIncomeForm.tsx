@@ -11,6 +11,7 @@ import type { Account } from "../../types/account";
 
 import { getAccounts } from "../accounts/account.service";
 import { createIncome } from "./income.service";
+import { todayKey } from "../../utils/entryDate";
 
 
 
@@ -27,6 +28,9 @@ export default function AddIncomeForm() {
 
     const [notes, setNotes] =
         useState("");
+
+    const [date, setDate] =
+        useState(todayKey());
 
     const [accounts, setAccounts] =
         useState<Account[]>([]);
@@ -67,7 +71,8 @@ export default function AddIncomeForm() {
             await createIncome(
                 Number(amount),
                 accountId,
-                notes
+                notes,
+                date
             );
 
             toast({
@@ -78,6 +83,7 @@ export default function AddIncomeForm() {
 
             setAmount("");
             setNotes("");
+            setDate(todayKey());
 
         } catch (error) {
 
@@ -160,9 +166,26 @@ export default function AddIncomeForm() {
 
                 <label className="grid gap-1">
                     <span className="text-xs font-medium text-stone-500">
-                        Notes
+                        Date
                     </span>
 
+                    <input
+                        type="date"
+                        value={date}
+                        max={todayKey()}
+                        onChange={(e) =>
+                            setDate(
+                                e.target.value
+                            )
+                        }
+                        className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                    />
+                </label>
+
+                <label className="grid gap-1">
+                    <span className="text-xs font-medium text-stone-500">
+                        Notes
+                    </span>
                     <input
                         value={notes}
                         onChange={(e) =>

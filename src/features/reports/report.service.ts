@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+
 import { db } from "../../db/database";
 
 import { calculateAccountBalance } from "../accounts/accountBalance.service";
@@ -10,11 +12,15 @@ export interface DateRange {
     end: string; // yyyy-MM-dd (inclusive)
 }
 
+function toLocalDateKey(dateString: string): string {
+    return format(new Date(dateString), "yyyy-MM-dd");
+}
+
 function isWithinRange(
     dateString: string,
     range: DateRange
 ): boolean {
-    const date = dateString.slice(0, 10);
+    const date = toLocalDateKey(dateString);
 
     return date >= range.start && date <= range.end;
 }
@@ -107,7 +113,7 @@ export async function getMonthlyTrends(
     const months = new Map<string, { income: number; expense: number }>();
 
     const getEntry = (dateString: string) => {
-        const month = dateString.slice(0, 7);
+        const month = toLocalDateKey(dateString).slice(0, 7);
 
         let entry = months.get(month);
 

@@ -5,6 +5,7 @@ import type { ObligationPayment } from "../../types/obligationPayment";
 
 import {
     createExpense,
+    expenseBalanceTables,
     softDeleteExpense,
 } from "../expenses/expense.service";
 
@@ -73,7 +74,9 @@ export async function markObligationPaid(
     // payment never leaves an orphan expense behind.
     return db.transaction(
         "rw",
-        [db.expenses, db.obligationPayments, db.obligations],
+        // createExpense runs a nested balance-check transaction, so every
+        // table it reads must be part of this outer transaction too.
+        [...expenseBalanceTables, db.obligationPayments, db.obligations],
         async () => {
 
             let expenseId: string | undefined;

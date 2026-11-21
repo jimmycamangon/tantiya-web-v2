@@ -1,6 +1,45 @@
 import { db } from "../../db/database";
 import type { Expense } from "../../types/expense";
 import { getCurrentCutoff } from "../cutoffs/getCurrentCutoff";
+import { calculateAccountBalance } from "../accounts/accountBalance.service";
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+  }).format(amount);
+}
+
+// Tables read by calculateAccountBalance plus the expenses table we write to,
+// so the balance check and the write happen atomically.
+const balanceTables = [
+  db.expenses,
+  db.incomes,
+  db.transfers,
+  db.adjustments,
+  db.accounts,
+];
+
+async function assertSufficientBalance(
+  accountId: string,
+  amount: number,
+  // Amount already counted against this account (when editing an expense).
+  alreadyDeducted = 0
+): Promise<void> {
+  const balance = await calculateAccountBalance(accountId);
+  const spendable = balance + alreadyDeducted;
+
+  if (amount > spendable) {
+    const account = await db.accounts.get(accountId);
+    const name = account?.name ?? "this account";
+
+    throw new Error(
+      spendable <= 0
+        ? `Not enough balance: ${name} has ${formatCurrency(spendable)}.`
+        : `Not enough balance: ${name} only has ${formatCurrency(spendable)} available.`
+    );
+  }
+}
 
 export async function createExpense(
   amount: number,
@@ -30,7 +69,10 @@ export async function createExpense(
     createdAt: now.toISOString(),
   };
 
-  await db.expenses.add(expense);
+  await db.transaction("rw", balanceTables, async () => {
+    await assertSufficientBalance(accountId, amount);
+    await db.expenses.add(expense);
+  });
 
   return expense;
 }
@@ -56,9 +98,25 @@ export async function updateExpense(
     );
   }
 
+  await db.transaction("rw", balanceTables, async () => {
+    const existing = await db.expenses.get(expenseId);
 
-  await db.expenses.update(expenseId, {
-    amount,
-    notes,
+    if (!existing) {
+      throw new Error("Expense not found");
+    }
+
+    // Only check when the amount grows; lowering an expense is always allowed.
+    if (amount > existing.amount && !existing.isDeleted) {
+      await assertSufficientBalance(
+        existing.accountId,
+        amount,
+        existing.amount
+      );
+    }
+
+    await db.expenses.update(expenseId, {
+      amount,
+      notes,
+    });
   });
 }

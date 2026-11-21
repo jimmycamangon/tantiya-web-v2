@@ -8,22 +8,11 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import {
-  ArrowLeftRight,
-  BookOpen,
-  CalendarCheck,
-  FileChartColumn,
-  LayoutDashboard,
-  Receipt,
-  Settings,
-  Tags,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
-
 import { seedDefaultCategories } from "./db/seed";
 
 import Footer from "./components/Footer";
+import MobileNav from "./components/MobileNav";
+import { navItems } from "./navigation";
 
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -38,59 +27,6 @@ import SettingsPage from "./pages/SettingsPage";
 import GuidePage
   from "./pages/GuidePage";
 
-
-const navItems = [
-  {
-    to: "/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    to: "/guide",
-    label: "Guide",
-    icon: BookOpen,
-  },
-  {
-    to: "/accounts",
-    label: "Accounts",
-    icon: Wallet,
-  },
-  {
-    to: "/categories",
-    label: "Categories",
-    icon: Tags,
-  },
-  {
-    to: "/expenses",
-    label: "Expenses",
-    icon: Receipt,
-  },
-  {
-    to: "/incomes",
-    label: "Incomes",
-    icon: TrendingUp,
-  },
-  {
-    to: "/transfers",
-    label: "Transfers",
-    icon: ArrowLeftRight,
-  },
-  {
-    to: "/obligations",
-    label: "Obligations",
-    icon: CalendarCheck,
-  },
-  {
-    to: "/reports",
-    label: "Reports",
-    icon: FileChartColumn,
-  },
-  {
-    to: "/settings",
-    label: "Settings",
-    icon: Settings,
-  },
-];
 
 function AppLayout() {
   const location = useLocation();
@@ -107,9 +43,9 @@ function AppLayout() {
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-950">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col lg:flex-row">
-        <aside className="border-b border-stone-200 bg-white/85 px-4 py-4 backdrop-blur lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
-          <div className="mb-4 flex items-center justify-between gap-3 lg:mb-8">
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:flex-row lg:pb-0">
+        <aside className="sticky top-0 z-30 border-b border-stone-200 bg-white/85 px-4 py-3 backdrop-blur lg:h-screen lg:w-64 lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
+          <div className="flex items-center justify-between gap-3 lg:mb-8">
             <NavLink
               to="/"
               className="flex items-center gap-3 transition hover:opacity-90"
@@ -134,7 +70,8 @@ function AppLayout() {
             </div>
           </div>
 
-          <nav className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+          {/* Desktop sidebar; phones and tablets use MobileNav at the bottom. */}
+          <nav aria-label="Main" className="hidden flex-col gap-1 lg:flex">
             {navItems.map((item) => {
               const Icon = item.icon;
 
@@ -187,6 +124,8 @@ function AppLayout() {
           <Footer />
         </div>
       </div>
+
+      <MobileNav />
     </div>
   );
 }

@@ -4,6 +4,9 @@ import AddObligationForm
 import ObligationList
     from "../features/obligations/ObligationList";
 
+import BudgetSection
+    from "../features/budgets/BudgetSection";
+
 export default function ObligationsPage() {
 
     return (
@@ -26,6 +29,8 @@ export default function ObligationsPage() {
             <AddObligationForm />
 
             <ObligationList />
+
+            <BudgetSection />
 
         </div>
     );

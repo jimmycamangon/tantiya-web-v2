@@ -68,7 +68,7 @@ function isoWeekday(date: Date): number {
  * The most recent occurrence on or before `ref`,
  * or the first occurrence strictly after `ref`.
  */
-function getOccurrence(
+export function getOccurrence(
     obligation: Obligation,
     ref: Date,
     direction: "onOrBefore" | "after"

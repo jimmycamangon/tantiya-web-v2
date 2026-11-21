@@ -11,6 +11,7 @@ import {
 } from "../../components/AppFeedback";
 import { db }
     from "../../db/database";
+import { useReserveGuard } from "../budget/useReserveGuard";
 import { softDeleteExpense, updateExpense }
     from "./expense.service";
 import { toDateKey, todayKey }
@@ -85,6 +86,9 @@ export default function ExpenseList() {
 
     const toast =
         useToast();
+
+    const confirmReserveUse =
+        useReserveGuard();
 
     const categories =
         useLiveQuery(
@@ -423,6 +427,19 @@ export default function ExpenseList() {
                                                         className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-emerald-600 text-white transition hover:bg-emerald-700"
                                                         onClick={async () => {
                                                             try {
+                                                                // Only a bigger amount can eat into reserved money.
+                                                                if (
+                                                                    Number(editAmount) > expense.amount &&
+                                                                    !(await confirmReserveUse(
+                                                                        expense.accountId,
+                                                                        Number(editAmount),
+                                                                        expense.categoryId,
+                                                                        expense.amount
+                                                                    ))
+                                                                ) {
+                                                                    return;
+                                                                }
+
                                                                 await updateExpense(
                                                                     expense.id,
                                                                     Number(editAmount),

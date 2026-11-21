@@ -28,6 +28,8 @@ import type { ObligationPayment }
     from "../../types/obligationPayment";
 import type { Transfer }
     from "../../types/transfer";
+import type { Budget, BudgetSettlement }
+    from "../../types/budget";
 
 type BackupData = {
     accounts?: Account[];
@@ -39,6 +41,8 @@ type BackupData = {
     transfers?: Transfer[];
     adjustments?: Adjustment[];
     obligationPayments?: ObligationPayment[];
+    budgets?: Budget[];
+    budgetSettlements?: BudgetSettlement[];
 };
 
 function getTableData<Key extends keyof BackupData>(
@@ -90,7 +94,7 @@ export default function ImportBackupButton() {
         const confirmed =
             await confirm({
                 title: "Replace all data?",
-                message: "This will overwrite your current accounts, categories, income, expenses, transfers, obligations, and adjustments.",
+                message: "This will overwrite your current accounts, categories, income, expenses, transfers, obligations, budgets, and adjustments.",
                 confirmLabel: "Import Backup",
                 tone: "danger"
             });
@@ -124,7 +128,9 @@ export default function ImportBackupButton() {
                     db.obligations,
                     db.transfers,
                     db.adjustments,
-                    db.obligationPayments
+                    db.obligationPayments,
+                    db.budgets,
+                    db.budgetSettlements
                 ],
                 async () => {
                     await db.accounts.clear();
@@ -136,6 +142,8 @@ export default function ImportBackupButton() {
                     await db.transfers.clear();
                     await db.adjustments.clear();
                     await db.obligationPayments.clear();
+                    await db.budgets.clear();
+                    await db.budgetSettlements.clear();
 
                     await db.accounts.bulkAdd(
                         getTableData(backup, "accounts")
@@ -171,6 +179,14 @@ export default function ImportBackupButton() {
 
                     await db.obligationPayments.bulkAdd(
                         getTableData(backup, "obligationPayments")
+                    );
+
+                    await db.budgets.bulkAdd(
+                        getTableData(backup, "budgets")
+                    );
+
+                    await db.budgetSettlements.bulkAdd(
+                        getTableData(backup, "budgetSettlements")
                     );
                 }
             );

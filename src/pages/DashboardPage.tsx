@@ -12,6 +12,9 @@ import MonthlySummary
 import RecentActivity
     from "../features/dashboard/RecentActivity";
 
+import BudgetLeftoverCards
+    from "../features/budgets/BudgetLeftoverCards";
+
 export default function DashboardPage() {
 
     return (
@@ -27,6 +30,8 @@ export default function DashboardPage() {
                     Track cash, obligations, and recent movement in one practical view.
                 </p>
             </div>
+
+            <BudgetLeftoverCards />
 
             <DashboardSummary />
 

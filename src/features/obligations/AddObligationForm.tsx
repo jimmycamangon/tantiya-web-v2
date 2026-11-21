@@ -19,6 +19,66 @@ import {
     createObligation
 } from "./obligation.service";
 
+import type { Obligation } from "../../types/obligation";
+import { roundMoney } from "../../utils/money";
+import { useBudgetSnapshot } from "../budget/budgetSnapshot";
+import { computeReservations } from "./obligationReserve";
+
+function formatCurrency(amount: number) {
+    return new Intl.NumberFormat("en-PH", {
+        style: "currency",
+        currency: "PHP",
+    }).format(amount);
+}
+
+interface DraftObligationInput {
+    name: string;
+    amount: string;
+    dueDay: string;
+    dueMonth: string;
+    accountId: string;
+    recurrenceType: RecurrenceType;
+    fundingRule: FundingRule;
+}
+
+/** What saving this obligation would set aside, or null if incomplete. */
+function previewDraft(input: DraftObligationInput) {
+
+    const amount = Number(input.amount);
+    const dueDay = Number(input.dueDay);
+
+    if (
+        !(amount > 0) ||
+        !dueDay ||
+        (input.recurrenceType === "yearly" && !input.dueMonth)
+    ) {
+        return null;
+    }
+
+    const draft: Obligation = {
+        id: "draft",
+        name: input.name || "New obligation",
+        amount,
+        recurrenceType: input.recurrenceType,
+        dueDay,
+        dueMonth: input.recurrenceType === "yearly"
+            ? Number(input.dueMonth)
+            : undefined,
+        accountId: input.accountId || "draft",
+        fundingRule: input.fundingRule,
+        active: true,
+        createdAt: new Date().toISOString(),
+    };
+
+    const result = computeReservations([draft], new Map());
+
+    return {
+        reservedNow: result.reservedNow,
+        projected: result.projectedObligations,
+        nextDue: result.lines[0]?.dueDate,
+    };
+}
+
 export default function AddObligationForm() {
 
     const [name, setName] =
@@ -55,6 +115,19 @@ export default function AddObligationForm() {
 
     const toast =
         useToast();
+
+    const snapshot =
+        useBudgetSnapshot();
+
+    const preview = previewDraft({
+        name,
+        amount,
+        dueDay,
+        dueMonth,
+        accountId,
+        recurrenceType,
+        fundingRule,
+    });
 
     useEffect(() => {
 
@@ -338,6 +411,60 @@ export default function AddObligationForm() {
                         </option>
                     </select>
                 </label>
+
+                {preview && snapshot && (
+                    <div
+                        data-testid="obligation-preview"
+                        className="grid gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm sm:grid-cols-3 lg:col-span-3"
+                    >
+                        <div>
+                            <p className="text-xs font-medium text-amber-800">
+                                Set aside now
+                            </p>
+                            <p className="font-semibold text-amber-900">
+                                {formatCurrency(preview.reservedNow)}
+                            </p>
+                            <p className="text-xs text-amber-800">
+                                {preview.reservedNow > 0
+                                    ? preview.nextDue
+                                        ? `Next due ${preview.nextDue.toLocaleDateString("en-PH", { month: "short", day: "numeric" })}`
+                                        : ""
+                                    : "Funded by a later cutoff."}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-xs font-medium text-amber-800">
+                                Safe to spend after saving
+                            </p>
+                            <p className={`font-semibold ${snapshot.safeToSpend - preview.reservedNow >= 0
+                                ? "text-emerald-700"
+                                : "text-red-700"}`}
+                            >
+                                {formatCurrency(
+                                    roundMoney(snapshot.safeToSpend - preview.reservedNow)
+                                )}
+                            </p>
+                            <p className="text-xs text-amber-800">
+                                Now {formatCurrency(snapshot.safeToSpend)}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-xs font-medium text-amber-800">
+                                After all bills this month
+                            </p>
+                            <p className={`font-semibold ${snapshot.afterBillsThisMonth - preview.projected >= 0
+                                ? "text-stone-900"
+                                : "text-red-700"}`}
+                            >
+                                {formatCurrency(
+                                    roundMoney(snapshot.afterBillsThisMonth - preview.projected)
+                                )}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 <button
                     type="submit"

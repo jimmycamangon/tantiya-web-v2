@@ -14,6 +14,7 @@ import { getAccounts } from "../accounts/account.service";
 import { getCategories } from "../categories/category.service";
 
 import { createExpense } from "./expense.service";
+import { useReserveGuard } from "../budget/useReserveGuard";
 import { todayKey } from "../../utils/entryDate";
 
 export default function AddExpenseForm() {
@@ -29,6 +30,9 @@ export default function AddExpenseForm() {
 
     const toast =
         useToast();
+
+    const confirmReserveUse =
+        useReserveGuard();
 
     useEffect(() => {
         async function loadData() {
@@ -66,6 +70,16 @@ export default function AddExpenseForm() {
         );
 
         try {
+            if (
+                !(await confirmReserveUse(
+                    accountId,
+                    Number(amount),
+                    categoryId
+                ))
+            ) {
+                return;
+            }
+
             await createExpense(
                 Number(amount),
                 categoryId,

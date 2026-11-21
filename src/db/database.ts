@@ -10,6 +10,7 @@ import type { Obligation } from "../types/obligation";
 import type { Transfer } from "../types/transfer";
 import type { Adjustment } from "../types/adjustment";
 import type { ObligationPayment } from "../types/obligationPayment";
+import type { Budget, BudgetSettlement } from "../types/budget";
 
 export class TantiyaDB extends Dexie {
   accounts!: Table<Account>;
@@ -21,6 +22,8 @@ export class TantiyaDB extends Dexie {
   transfers!: Table<Transfer>;
   adjustments!: Table<Adjustment>;
   obligationPayments!: Table<ObligationPayment>;
+  budgets!: Table<Budget>;
+  budgetSettlements!: Table<BudgetSettlement>;
 
   constructor() {
     super("TantiyaDB");
@@ -47,6 +50,14 @@ export class TantiyaDB extends Dexie {
     this.version(2).stores({
       obligationPayments:
         "id,obligationId,periodKey,paidDate",
+    });
+
+    this.version(3).stores({
+      budgets: "id,categoryId,accountId,active",
+    });
+
+    this.version(4).stores({
+      budgetSettlements: "id,budgetId,windowKey,[budgetId+windowKey]",
     });
   }
 }

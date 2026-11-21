@@ -1,43 +1,20 @@
 import type { Obligation }
     from "../../types/obligation";
 
-import {
-    getObligationDueInfo
-} from "./obligationSchedule";
+import { computeReservations } from "./obligationReserve";
 
 /**
- * Sums the amounts that should be set aside for
- * obligations due within the next 7 days (or overdue),
- * skipping obligations already paid for the period.
+ * Sums the money that must already be set aside for unpaid
+ * obligations, based on each obligation's funding rule.
+ * See obligationReserve.ts for the cutoff rules.
  */
 export function calculateReservedAmount(
     obligations: Obligation[],
     paidPeriodKeys: Map<string, Set<string>>
 ): number {
 
-    return obligations.reduce(
-        (total, obligation) => {
-
-            const dueInfo =
-                getObligationDueInfo(
-                    obligation,
-                    paidPeriodKeys.get(
-                        obligation.id
-                    ) ?? new Set()
-                );
-
-            if (
-                !dueInfo.paidForCurrentPeriod &&
-                dueInfo.daysUntilDue <= 7
-            ) {
-                return (
-                    total +
-                    obligation.amount
-                );
-            }
-
-            return total;
-        },
-        0
-    );
+    return computeReservations(
+        obligations,
+        paidPeriodKeys
+    ).reservedNow;
 }

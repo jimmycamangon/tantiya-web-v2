@@ -15,6 +15,7 @@ import {
     resolveQuickExpense
 } from "./resolveQuickExpense";
 import { createExpense } from "./expense.service";
+import { useReserveGuard } from "../budget/useReserveGuard";
 
 function formatCurrency(
     amount: number
@@ -44,6 +45,9 @@ export default function QuickExpenseInput() {
 
     const toast =
         useToast();
+
+    const confirmReserveUse =
+        useReserveGuard();
 
     useEffect(() => {
         async function loadData() {
@@ -121,6 +125,16 @@ export default function QuickExpenseInput() {
                 throw new Error(
                     `Account '${resolved.account}' not found`
                 );
+            }
+
+            if (
+                !(await confirmReserveUse(
+                    account.id,
+                    resolved.amount,
+                    category.id
+                ))
+            ) {
+                return;
             }
 
             await createExpense(

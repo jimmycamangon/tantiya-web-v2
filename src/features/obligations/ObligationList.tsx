@@ -2,8 +2,10 @@ import { useState } from "react";
 
 import {
     Check,
+    HandCoins,
     Pencil,
     Trash2,
+    Undo2,
     X
 } from "lucide-react";
 
@@ -22,12 +24,19 @@ import {
 } from "./obligation.service";
 
 import {
-    getDaysUntilDue
-} from "./getDaysUntilDue";
+    getObligationDueInfo
+} from "./obligationSchedule";
 
 import {
     getObligationStatus
 } from "./getObligationStatus";
+
+import {
+    getPaidPeriodKeys,
+    undoLatestObligationPayment
+} from "./obligationPayment.service";
+
+import MarkPaidForm from "./MarkPaidForm";
 
 function formatCurrency(
     amount: number
@@ -63,6 +72,37 @@ function formatRecurrence(
     }
 }
 
+const WEEKDAYS = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+];
+
+function formatDueDay(
+    recurrenceType: string,
+    dueDay: number,
+    dueMonth?: number
+) {
+    if (recurrenceType === "weekly") {
+        return `Every ${WEEKDAYS[dueDay - 1] ?? `day ${dueDay}`}`;
+    }
+
+    if (recurrenceType === "yearly" && dueMonth) {
+        const month = new Date(2000, dueMonth - 1, 1).toLocaleString(
+            "en-US",
+            { month: "long" }
+        );
+
+        return `Every ${month} ${dueDay}`;
+    }
+
+    return `Due Day ${dueDay}`;
+}
+
 function formatFundingRule(
     value: string
 ) {
@@ -88,6 +128,9 @@ function getStatusClasses(
 
     switch (status) {
 
+        case "Paid":
+            return "bg-emerald-600 text-white";
+
         case "Overdue":
             return "bg-red-100 text-red-700";
 
@@ -110,6 +153,18 @@ export default function ObligationList() {
             () => getObligations(),
             []
         );
+
+    const paidPeriodKeys =
+        useLiveQuery(
+            () => getPaidPeriodKeys(),
+            []
+        );
+
+    const [
+        markingPaidId,
+        setMarkingPaidId
+    ] = useState("");
+
     const [
         editingObligationId,
         setEditingObligationId
@@ -125,6 +180,10 @@ export default function ObligationList() {
 
     const [editDueDay,
         setEditDueDay] =
+        useState("");
+
+    const [editDueMonth,
+        setEditDueMonth] =
         useState("");
 
     const confirm =
@@ -175,15 +234,23 @@ export default function ObligationList() {
                 {obligations.map(
                     obligation => {
 
-                        const daysUntilDue =
-                            getDaysUntilDue(
-                                obligation.dueDay
+                        const dueInfo =
+                            getObligationDueInfo(
+                                obligation,
+                                paidPeriodKeys?.get(
+                                    obligation.id
+                                ) ?? new Set()
                             );
 
+                        const daysUntilDue =
+                            dueInfo.daysUntilDue;
+
                         const status =
-                            getObligationStatus(
-                                daysUntilDue
-                            );
+                            dueInfo.paidForCurrentPeriod
+                                ? "Paid"
+                                : getObligationStatus(
+                                    daysUntilDue
+                                );
 
                         return (
                             <div
@@ -198,7 +265,13 @@ export default function ObligationList() {
                                         obligation.id
                                         ? (
                                             <>
-                                                <div className="grid gap-3 lg:grid-cols-[1fr_140px_100px_auto_auto] lg:items-center">
+                                                <div
+                                                    className={`grid gap-3 lg:items-center ${
+                                                        obligation.recurrenceType === "yearly"
+                                                            ? "lg:grid-cols-[1fr_140px_140px_100px_auto_auto]"
+                                                            : "lg:grid-cols-[1fr_140px_100px_auto_auto]"
+                                                    }`}
+                                                >
                                                     <input
                                                         className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                                                         value={
@@ -227,7 +300,16 @@ export default function ObligationList() {
                                                     <input
                                                         type="number"
                                                         min="1"
-                                                        max="31"
+                                                        max={
+                                                            obligation.recurrenceType === "weekly"
+                                                                ? "7"
+                                                                : "31"
+                                                        }
+                                                        title={
+                                                            obligation.recurrenceType === "weekly"
+                                                                ? "1 = Monday … 7 = Sunday"
+                                                                : "Day of the month"
+                                                        }
                                                         className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                                                         value={
                                                             editDueDay
@@ -238,6 +320,32 @@ export default function ObligationList() {
                                                             )
                                                         }
                                                     />
+                                                    {obligation.recurrenceType === "yearly" && (
+                                                        <select
+                                                            title="Due month"
+                                                            className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                                                            value={editDueMonth}
+                                                            onChange={(e) =>
+                                                                setEditDueMonth(
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                        >
+                                                            <option value="">Month</option>
+
+                                                            {Array.from({ length: 12 }, (_, i) => (
+                                                                <option
+                                                                    key={i + 1}
+                                                                    value={i + 1}
+                                                                >
+                                                                    {new Date(2000, i, 1).toLocaleString(
+                                                                        "en-US",
+                                                                        { month: "short" }
+                                                                    )}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    )}
                                                     <button
                                                         type="button"
                                                         title="Save obligation"
@@ -260,7 +368,11 @@ export default function ObligationList() {
                                                                         dueDay:
                                                                             Number(
                                                                                 editDueDay
-                                                                            )
+                                                                            ),
+
+                                                                        ...(obligation.recurrenceType === "yearly"
+                                                                            ? { dueMonth: Number(editDueMonth) }
+                                                                            : {})
                                                                     }
                                                                 );
 
@@ -337,13 +449,19 @@ export default function ObligationList() {
                                                         </p>
 
                                                         <p className="text-sm text-stone-500">
-                                                            Due Day {obligation.dueDay}
+                                                            {formatDueDay(
+                                                                obligation.recurrenceType,
+                                                                obligation.dueDay,
+                                                                obligation.dueMonth
+                                                            )}
                                                         </p>
                                                         <p className="text-sm text-stone-500">
                                                             {
                                                                 daysUntilDue < 0
                                                                     ? `${Math.abs(daysUntilDue)} days overdue`
-                                                                    : `Due in ${daysUntilDue} days`
+                                                                    : daysUntilDue === 0
+                                                                        ? "Due today"
+                                                                        : `${dueInfo.paidForCurrentPeriod ? "Next due" : "Due"} in ${daysUntilDue} days`
                                                             }
                                                         </p>
 
@@ -358,6 +476,66 @@ export default function ObligationList() {
                                                     </span>
 
                                                     <div className="flex gap-2">
+
+                                                        {!dueInfo.paidForCurrentPeriod && (
+                                                            <button
+                                                                type="button"
+                                                                title="Mark as paid"
+                                                                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-white px-3 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
+                                                                onClick={() =>
+                                                                    setMarkingPaidId(
+                                                                        markingPaidId ===
+                                                                            obligation.id
+                                                                            ? ""
+                                                                            : obligation.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                <HandCoins
+                                                                    aria-hidden="true"
+                                                                    className="h-4 w-4"
+                                                                />
+                                                                Mark paid
+                                                            </button>
+                                                        )}
+
+                                                        {(paidPeriodKeys?.get(
+                                                            obligation.id
+                                                        )?.size ?? 0) > 0 && (
+                                                                <button
+                                                                    type="button"
+                                                                    title="Undo last payment"
+                                                                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 text-sm font-medium text-stone-600 transition hover:bg-stone-50"
+                                                                    onClick={async () => {
+
+                                                                        const confirmed =
+                                                                            await confirm({
+                                                                                title: "Undo payment?",
+                                                                                message: `The most recent payment for ${obligation.name} will be removed, along with any expense recorded with it.`,
+                                                                                confirmLabel: "Undo",
+                                                                                tone: "warning"
+                                                                            });
+
+                                                                        if (!confirmed) {
+                                                                            return;
+                                                                        }
+                                                                        await undoLatestObligationPayment(
+                                                                            obligation.id
+                                                                        );
+
+                                                                        toast({
+                                                                            type: "success",
+                                                                            message: "Payment undone."
+                                                                        });
+                                                                    }}
+                                                                >
+                                                                    <Undo2
+                                                                        aria-hidden="true"
+                                                                        className="h-4 w-4"
+                                                                    />
+                                                                    Undo
+                                                                </button>
+                                                            )}
 
                                                         <button
                                                             type="button"
@@ -379,6 +557,10 @@ export default function ObligationList() {
 
                                                                 setEditDueDay(
                                                                     obligation.dueDay.toString()
+                                                                );
+
+                                                                setEditDueMonth(
+                                                                    obligation.dueMonth?.toString() ?? ""
                                                                 );
                                                             }}
                                                         >
@@ -429,6 +611,16 @@ export default function ObligationList() {
                                                     </div>
 
                                                 </div>
+
+                                                {markingPaidId ===
+                                                    obligation.id && (
+                                                        <MarkPaidForm
+                                                            obligation={obligation}
+                                                            onClose={() =>
+                                                                setMarkingPaidId("")
+                                                            }
+                                                        />
+                                                    )}
                                             </>
                                         )
                                 }

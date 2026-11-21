@@ -1,12 +1,14 @@
 import { db } from "../../db/database";
 import type { Transfer } from "../../types/transfer";
+import { toEntryDate } from "../../utils/entryDate";
 
 
 export async function createTransfer(
     fromAccountId: string,
     toAccountId: string,
     amount: number,
-    notes?: string
+    notes?: string,
+    dateKey?: string
 ): Promise<Transfer> {
 
     if (amount <= 0) {
@@ -26,6 +28,14 @@ export async function createTransfer(
 
     const now = new Date();
 
+    const entryDate = toEntryDate(dateKey);
+
+    if (entryDate > now) {
+        throw new Error(
+            "Date cannot be in the future"
+        );
+    }
+
     const transfer: Transfer = {
         id: crypto.randomUUID(),
 
@@ -34,7 +44,7 @@ export async function createTransfer(
 
         amount,
 
-        date: now.toISOString(),
+        date: entryDate.toISOString(),
 
         notes,
 
@@ -78,6 +88,24 @@ export async function updateTransfer(
     transferId: string,
     updates: Partial<Transfer>
 ): Promise<void> {
+
+    if (
+        updates.amount !== undefined &&
+        (!Number.isFinite(updates.amount) || updates.amount <= 0)
+    ) {
+        throw new Error(
+            "Amount must be greater than zero"
+        );
+    }
+
+    if (
+        updates.date !== undefined &&
+        new Date(updates.date) > new Date()
+    ) {
+        throw new Error(
+            "Date cannot be in the future"
+        );
+    }
 
     await db.transfers.update(
         transferId,

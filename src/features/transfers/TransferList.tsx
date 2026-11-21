@@ -1,5 +1,19 @@
-import { useState }
+import { useMemo, useState }
     from "react";
+
+import HistoryFilters
+    from "../../components/HistoryFilters";
+
+import {
+    DEFAULT_HISTORY_FILTERS,
+    HISTORY_PAGE_SIZE,
+    matchesPeriod,
+    matchesSearch,
+    sortNewestFirst,
+} from "../../utils/historyFilter";
+
+import type { HistoryFilterState }
+    from "../../utils/historyFilter";
 
 import {
     Check,
@@ -24,6 +38,15 @@ import {
     updateTransfer,
     softDeleteTransfer
 } from "./transfer.service";
+
+import type { Transfer }
+    from "../../types/transfer";
+
+import {
+    toDateKey,
+    toEntryDate,
+    todayKey
+} from "../../utils/entryDate";
 
 
 function formatCurrency(
@@ -84,6 +107,44 @@ export default function TransferList() {
         setEditNotes
     ] = useState("");
 
+    const [
+        editDate,
+        setEditDate
+    ] = useState("");
+
+    const [filters, setFilters] =
+        useState<HistoryFilterState>(DEFAULT_HISTORY_FILTERS);
+
+    const [visibleCount, setVisibleCount] =
+        useState(HISTORY_PAGE_SIZE);
+
+    // Reset paging whenever a filter changes.
+    function updateFilters(next: HistoryFilterState) {
+        setFilters(next);
+        setVisibleCount(HISTORY_PAGE_SIZE);
+    }
+
+    const filteredTransfers = useMemo(() => {
+
+        const nameOf = (accountId: string) =>
+            accounts?.find(a => a.id === accountId)?.name;
+
+        return sortNewestFirst(
+            (transfers ?? []).filter(transfer =>
+                matchesSearch(
+                    filters.search,
+                    transfer.notes,
+                    nameOf(transfer.fromAccountId),
+                    nameOf(transfer.toAccountId)
+                ) &&
+                matchesPeriod(transfer.date, filters.period) &&
+                (filters.option === "all" ||
+                    transfer.fromAccountId === filters.option ||
+                    transfer.toAccountId === filters.option)
+            )
+        );
+    }, [transfers, accounts, filters]);
+
     const confirm =
         useConfirmDialog();
 
@@ -140,9 +201,29 @@ export default function TransferList() {
                 </p>
             </div>
 
-            <div className="divide-y divide-stone-100 overflow-hidden rounded-md border border-stone-200">
+            <HistoryFilters
+                filters={filters}
+                onChange={updateFilters}
+                searchPlaceholder="Search transfers..."
+                options={(accounts ?? []).map(account => ({
+                    value: account.id,
+                    label: account.name,
+                }))}
+                allOptionLabel="All Accounts"
+                shownCount={Math.min(visibleCount, filteredTransfers.length)}
+                totalCount={filteredTransfers.length}
+                itemLabel={["transfer", "transfers"]}
+            />
 
-                {transfers?.map(
+            {filteredTransfers.length === 0 && (
+                <div className="rounded-md border border-dashed border-stone-300 bg-stone-50 px-4 py-6 text-sm text-stone-500">
+                    No transfers match your filters.
+                </div>
+            )}
+
+            <div className="divide-y divide-stone-100 overflow-hidden rounded-md border border-stone-200 empty:hidden">
+
+                {filteredTransfers.slice(0, visibleCount).map(
                     transfer => (
 
                         <div
@@ -155,11 +236,17 @@ export default function TransferList() {
                                     ? (
                                         <div className="grid gap-3 lg:grid-cols-[140px_1fr_120px_1fr_auto] lg:items-center">
 
-                                            <p className="text-stone-500">
-                                                {formatDate(
-                                                    transfer.date
-                                                )}
-                                            </p>
+                                            <input
+                                                type="date"
+                                                value={editDate}
+                                                max={todayKey()}
+                                                onChange={(e) =>
+                                                    setEditDate(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="h-10 rounded-md border border-stone-300 bg-white px-2 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                                            />
 
                                             <p className="font-medium text-stone-950">
                                                 {
@@ -207,16 +294,28 @@ export default function TransferList() {
 
                                                         try {
 
+                                                            const updates: Partial<Transfer> = {
+                                                                amount:
+                                                                    Number(
+                                                                        editAmount
+                                                                    ),
+                                                                notes:
+                                                                    editNotes
+                                                            };
+
+                                                            // Only change the date when it was edited,
+                                                            // so the original time of day is kept.
+                                                            if (
+                                                                editDate &&
+                                                                editDate !== toDateKey(transfer.date)
+                                                            ) {
+                                                                updates.date =
+                                                                    toEntryDate(editDate).toISOString();
+                                                            }
+
                                                             await updateTransfer(
                                                                 transfer.id,
-                                                                {
-                                                                    amount:
-                                                                        Number(
-                                                                            editAmount
-                                                                        ),
-                                                                    notes:
-                                                                        editNotes
-                                                                }
+                                                                updates
                                                             );
 
                                                             toast({
@@ -324,6 +423,10 @@ export default function TransferList() {
                                                                 transfer.notes ??
                                                                 ""
                                                             );
+
+                                                            setEditDate(
+                                                                toDateKey(transfer.date)
+                                                            );
                                                         }}
                                                     >
                                                         <Pencil
@@ -383,6 +486,20 @@ export default function TransferList() {
                 )}
 
             </div>
+
+            {filteredTransfers.length > visibleCount && (
+                <div className="mt-4 flex justify-center">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setVisibleCount(prev => prev + 50)
+                        }
+                        className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium"
+                    >
+                        Load More
+                    </button>
+                </div>
+            )}
 
         </section>
     );

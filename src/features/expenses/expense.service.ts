@@ -1,6 +1,8 @@
 import { db } from "../../db/database";
 import type { Expense } from "../../types/expense";
 import { getCurrentCutoff } from "../cutoffs/getCurrentCutoff";
+import { toDateKey, toEntryDate } from "../../utils/entryDate";
+import { roundMoney } from "../../utils/money";
 import { calculateAccountBalance } from "../accounts/accountBalance.service";
 
 function formatCurrency(amount: number) {
@@ -11,8 +13,9 @@ function formatCurrency(amount: number) {
 }
 
 // Tables read by calculateAccountBalance plus the expenses table we write to,
-// so the balance check and the write happen atomically.
-const balanceTables = [
+// so the balance check and the write happen atomically. Any outer transaction
+// that calls createExpense/updateExpense must include all of these tables.
+export const expenseBalanceTables = [
   db.expenses,
   db.incomes,
   db.transfers,
@@ -27,9 +30,9 @@ async function assertSufficientBalance(
   alreadyDeducted = 0
 ): Promise<void> {
   const balance = await calculateAccountBalance(accountId);
-  const spendable = balance + alreadyDeducted;
+  const spendable = roundMoney(balance + alreadyDeducted);
 
-  if (amount > spendable) {
+  if (roundMoney(amount) > spendable) {
     const account = await db.accounts.get(accountId);
     const name = account?.name ?? "this account";
 
@@ -45,7 +48,8 @@ export async function createExpense(
   amount: number,
   categoryId: string,
   accountId: string,
-  notes?: string
+  notes?: string,
+  dateKey?: string
 ): Promise<Expense> {
 
   if (amount <= 0) {
@@ -55,7 +59,15 @@ export async function createExpense(
   }
   const now = new Date();
 
-  const cutoff = getCurrentCutoff(now);
+  const entryDate = toEntryDate(dateKey);
+
+  if (entryDate > now) {
+    throw new Error(
+      "Date cannot be in the future"
+    );
+  }
+
+  const cutoff = getCurrentCutoff(entryDate);
 
   const expense: Expense = {
     id: crypto.randomUUID(),
@@ -63,13 +75,13 @@ export async function createExpense(
     categoryId,
     accountId,
     cutoffId: cutoff.id,
-    date: now.toISOString(),
+    date: entryDate.toISOString(),
     notes,
     isDeleted: false,
     createdAt: now.toISOString(),
   };
 
-  await db.transaction("rw", balanceTables, async () => {
+  await db.transaction("rw", expenseBalanceTables, async () => {
     await assertSufficientBalance(accountId, amount);
     await db.expenses.add(expense);
   });
@@ -89,7 +101,8 @@ export async function softDeleteExpense(
 export async function updateExpense(
   expenseId: string,
   amount: number,
-  notes?: string
+  notes?: string,
+  dateKey?: string
 ): Promise<void> {
 
   if (amount <= 0) {
@@ -98,25 +111,42 @@ export async function updateExpense(
     );
   }
 
-  await db.transaction("rw", balanceTables, async () => {
-    const existing = await db.expenses.get(expenseId);
+  await db.transaction("rw", expenseBalanceTables, async () => {
+    const expense = await db.expenses.get(expenseId);
 
-    if (!existing) {
+    if (!expense) {
       throw new Error("Expense not found");
     }
 
     // Only check when the amount grows; lowering an expense is always allowed.
-    if (amount > existing.amount && !existing.isDeleted) {
+    if (amount > expense.amount && !expense.isDeleted) {
       await assertSufficientBalance(
-        existing.accountId,
+        expense.accountId,
         amount,
-        existing.amount
+        expense.amount
       );
     }
 
-    await db.expenses.update(expenseId, {
+    const updates: Partial<Expense> = {
       amount,
       notes,
-    });
+    };
+
+    // Only touch the date when it actually changed, so the
+    // original time of day is kept for unchanged entries.
+    if (dateKey && dateKey !== toDateKey(expense.date)) {
+      const entryDate = toEntryDate(dateKey);
+
+      if (entryDate > new Date()) {
+        throw new Error(
+          "Date cannot be in the future"
+        );
+      }
+
+      updates.date = entryDate.toISOString();
+      updates.cutoffId = getCurrentCutoff(entryDate).id;
+    }
+
+    await db.expenses.update(expenseId, updates);
   });
 }

@@ -9,6 +9,7 @@ import type { Expense } from "../types/expense";
 import type { Obligation } from "../types/obligation";
 import type { Transfer } from "../types/transfer";
 import type { Adjustment } from "../types/adjustment";
+import type { ObligationPayment } from "../types/obligationPayment";
 
 export class TantiyaDB extends Dexie {
   accounts!: Table<Account>;
@@ -19,6 +20,7 @@ export class TantiyaDB extends Dexie {
   obligations!: Table<Obligation>;
   transfers!: Table<Transfer>;
   adjustments!: Table<Adjustment>;
+  obligationPayments!: Table<ObligationPayment>;
 
   constructor() {
     super("TantiyaDB");
@@ -40,6 +42,11 @@ export class TantiyaDB extends Dexie {
         "id,date,fromAccountId,toAccountId,isDeleted",
 
       adjustments: "id,date,accountId",
+    });
+
+    this.version(2).stores({
+      obligationPayments:
+        "id,obligationId,periodKey,paidDate",
     });
   }
 }

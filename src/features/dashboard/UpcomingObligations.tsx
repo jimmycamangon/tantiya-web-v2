@@ -6,12 +6,12 @@ import {
 } from "../obligations/obligation.service";
 
 import {
-    getDaysUntilDue
-} from "../obligations/getDaysUntilDue";
+    getObligationDueInfo
+} from "../obligations/obligationSchedule";
 
 import {
-    getObligationStatus
-} from "../obligations/getObligationStatus";
+    getPaidPeriodKeys
+} from "../obligations/obligationPayment.service";
 
 function formatCurrency(
     amount: number
@@ -35,35 +35,39 @@ export default function UpcomingObligations() {
             []
         );
 
+    const paidPeriodKeys =
+        useLiveQuery(
+            () => getPaidPeriodKeys(),
+            []
+        );
+
     const upcoming =
-        obligations?.filter(
-            obligation => {
-
-                const daysUntilDue =
-                    getDaysUntilDue(
-                        obligation.dueDay
-                    );
-
-                const status =
-                    getObligationStatus(
-                        daysUntilDue
-                    );
-
-                return (
-                    status ===
-                    "Prepare Funds" ||
-                    status ===
-                    "Due Soon"
-                );
-            }
-        ) ?? [];
-
+        (obligations ?? [])
+            .map(obligation => ({
+                obligation,
+                dueInfo: getObligationDueInfo(
+                    obligation,
+                    paidPeriodKeys?.get(
+                        obligation.id
+                    ) ?? new Set()
+                )
+            }))
+            .filter(
+                ({ dueInfo }) =>
+                    !dueInfo.paidForCurrentPeriod &&
+                    dueInfo.daysUntilDue <= 7
+            )
+            .sort(
+                (a, b) =>
+                    a.dueInfo.daysUntilDue -
+                    b.dueInfo.daysUntilDue
+            );
 
     const upcomingTotal =
         upcoming.reduce(
             (
                 total,
-                obligation
+                { obligation }
             ) =>
                 total +
                 obligation.amount,
@@ -78,7 +82,7 @@ export default function UpcomingObligations() {
                         Upcoming Obligations
                     </h2>
                     <p className="text-sm text-stone-500">
-                        Payments that need attention
+                        Unpaid obligations that need attention
                     </p>
                 </div>
 
@@ -101,35 +105,36 @@ export default function UpcomingObligations() {
                 : (
                     <div className="space-y-2">
                         {upcoming.map(
-                            obligation => {
-
-                                const daysUntilDue =
-                                    getDaysUntilDue(
-                                        obligation.dueDay
-                                    );
-
-                                return (
-                                    <div
-                                        key={obligation.id}
-                                        className="flex items-center justify-between gap-3 rounded-md border border-stone-200 px-3 py-2"
-                                    >
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-medium text-stone-950">
-                                                {obligation.name}
-                                            </p>
-                                            <p className="text-xs text-stone-500">
-                                                {daysUntilDue === 0
+                            ({ obligation, dueInfo }) => (
+                                <div
+                                    key={obligation.id}
+                                    className="flex items-center justify-between gap-3 rounded-md border border-stone-200 px-3 py-2"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-stone-950">
+                                            {obligation.name}
+                                        </p>
+                                        <p
+                                            className={
+                                                "text-xs " +
+                                                (dueInfo.daysUntilDue < 0
+                                                    ? "font-medium text-red-600"
+                                                    : "text-stone-500")
+                                            }
+                                        >
+                                            {dueInfo.daysUntilDue < 0
+                                                ? `${Math.abs(dueInfo.daysUntilDue)} days overdue`
+                                                : dueInfo.daysUntilDue === 0
                                                     ? "Due today"
-                                                    : `Due in ${daysUntilDue} days`}
-                                            </p>
-                                        </div>
-
-                                        <p className="shrink-0 text-sm font-semibold text-stone-950">
-                                            {formatCurrency(obligation.amount)}
+                                                    : `Due in ${dueInfo.daysUntilDue} days`}
                                         </p>
                                     </div>
-                                );
-                            }
+
+                                    <p className="shrink-0 text-sm font-semibold text-stone-950">
+                                        {formatCurrency(obligation.amount)}
+                                    </p>
+                                </div>
+                            )
                         )}
                     </div>
                 )}

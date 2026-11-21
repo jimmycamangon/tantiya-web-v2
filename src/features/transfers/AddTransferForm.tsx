@@ -10,6 +10,7 @@ import type { Account } from "../../types/account";
 
 import { getAccounts } from "../accounts/account.service";
 import { createTransfer } from "./transfer.service";
+import { todayKey } from "../../utils/entryDate";
 
 
 export default function AddTransferForm() {
@@ -28,6 +29,9 @@ export default function AddTransferForm() {
 
     const [notes, setNotes] =
         useState("");
+
+    const [date, setDate] =
+        useState(todayKey());
 
     const [accounts, setAccounts] =
         useState<Account[]>([]);
@@ -85,7 +89,8 @@ export default function AddTransferForm() {
                 fromAccountId,
                 toAccountId,
                 Number(amount),
-                notes
+                notes,
+                date
             );
 
             toast({
@@ -96,7 +101,7 @@ export default function AddTransferForm() {
 
             setAmount("");
             setNotes("");
-
+            setDate(todayKey());
         } catch (error) {
 
             toast({
@@ -204,6 +209,24 @@ export default function AddTransferForm() {
                         }
                         placeholder="0.00"
                         className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition placeholder:text-stone-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                    />
+                </label>
+
+                <label className="grid gap-1">
+                    <span className="text-xs font-medium text-stone-500">
+                        Date
+                    </span>
+
+                    <input
+                        type="date"
+                        value={date}
+                        max={todayKey()}
+                        onChange={(e) =>
+                            setDate(
+                                e.target.value
+                            )
+                        }
+                        className="h-10 rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                     />
                 </label>
 

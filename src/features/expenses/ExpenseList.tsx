@@ -13,6 +13,8 @@ import { db }
     from "../../db/database";
 import { softDeleteExpense, updateExpense }
     from "./expense.service";
+import { toDateKey, todayKey }
+    from "../../utils/entryDate";
 
 function formatCurrency(
     amount: number
@@ -73,6 +75,9 @@ export default function ExpenseList() {
         useState("");
 
     const [editNotes, setEditNotes] =
+        useState("");
+
+    const [editDate, setEditDate] =
         useState("");
 
     const confirm =
@@ -378,9 +383,15 @@ export default function ExpenseList() {
                                     >
                                         {editingExpenseId === expense.id ? (
                                             <>
-                                                <p className="text-stone-500">
-                                                    {formatDate(expense.date)}
-                                                </p>
+                                                <input
+                                                    type="date"
+                                                    value={editDate}
+                                                    max={todayKey()}
+                                                    onChange={(e) =>
+                                                        setEditDate(e.target.value)
+                                                    }
+                                                    className="h-10 rounded-md border border-stone-300 bg-white px-2 text-sm text-stone-950 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                                                />
 
                                                 <input
                                                     value={editNotes}
@@ -415,7 +426,8 @@ export default function ExpenseList() {
                                                                 await updateExpense(
                                                                     expense.id,
                                                                     Number(editAmount),
-                                                                    editNotes
+                                                                    editNotes,
+                                                                    editDate
                                                                 );
 
                                                                 toast({
@@ -494,6 +506,9 @@ export default function ExpenseList() {
                                                             );
                                                             setEditNotes(
                                                                 expense.notes ?? ""
+                                                            );
+                                                            setEditDate(
+                                                                toDateKey(expense.date)
                                                             );
                                                         }}
                                                     >

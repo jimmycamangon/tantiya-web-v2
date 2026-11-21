@@ -12,6 +12,7 @@ import {
   ArrowLeftRight,
   BookOpen,
   CalendarCheck,
+  FileChartColumn,
   LayoutDashboard,
   Receipt,
   Settings,
@@ -32,6 +33,7 @@ import IncomesPage from "./pages/IncomesPage";
 import TransfersPage from "./pages/TransfersPage";
 import ObligationsPage from "./pages/ObligationsPage";
 import CategoriesPage from "./pages/CategoriesPage";
+import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import GuidePage
   from "./pages/GuidePage";
@@ -77,6 +79,11 @@ const navItems = [
     to: "/obligations",
     label: "Obligations",
     icon: CalendarCheck,
+  },
+  {
+    to: "/reports",
+    label: "Reports",
+    icon: FileChartColumn,
   },
   {
     to: "/settings",
@@ -170,6 +177,8 @@ function AppLayout() {
               <Route path="/transfers" element={<TransfersPage />} />
 
               <Route path="/obligations" element={<ObligationsPage />} />
+
+              <Route path="/reports" element={<ReportsPage />} />
 
               <Route path="/settings" element={<SettingsPage />} />
             </Routes>

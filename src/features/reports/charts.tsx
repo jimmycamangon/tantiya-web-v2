@@ -1,9 +1,12 @@
 import {
+    useEffect,
     useLayoutEffect,
     useRef,
     useState,
+    type PointerEvent as ReactPointerEvent,
     type ReactNode,
 } from "react";
+import { format, parseISO } from "date-fns";
 
 /*
  * Small SVG charts for the Reports page. No chart library, so they
@@ -119,21 +122,29 @@ interface TooltipState {
     y: number;
     title: string;
     rows: TooltipRow[];
+    /** Data index the tooltip describes (used to draw a crosshair). */
+    index?: number;
 }
+
+const TOOLTIP_WIDTH = 176;
 
 function Tooltip({ state, width }: { state: TooltipState | null; width: number }) {
     if (!state) {
         return null;
     }
 
-    // Keep the tooltip inside the chart.
-    const left = Math.min(Math.max(state.x + 12, 0), Math.max(width - 190, 0));
+    // Sit beside the point, on whichever side has more room, so the
+    // tooltip never covers the spot being read. Stay inside the chart.
+    const preferred = state.x > width / 2
+        ? state.x - 12 - TOOLTIP_WIDTH
+        : state.x + 12;
+    const left = Math.min(Math.max(preferred, 0), Math.max(width - TOOLTIP_WIDTH, 0));
 
     return (
         <div
             role="status"
-            className="pointer-events-none absolute z-10 min-w-40 rounded-md border border-stone-200 bg-white px-3 py-2 text-xs shadow-md"
-            style={{ left, top: Math.max(state.y - 10, 0) }}
+            className="pointer-events-none absolute z-10 rounded-md border border-stone-200 bg-white px-3 py-2 text-xs shadow-md"
+            style={{ left, top: Math.max(state.y - 10, 0), width: TOOLTIP_WIDTH }}
         >
             <p className="mb-1 font-medium text-stone-500">{state.title}</p>
             {state.rows.map(row => (
@@ -156,12 +167,35 @@ function ChartFrame({
     height,
     label,
 }: {
-    children: (width: number, setTip: (t: TooltipState | null) => void) => ReactNode;
+    children: (
+        width: number,
+        setTip: (t: TooltipState | null) => void,
+        tip: TooltipState | null
+    ) => ReactNode;
     height: number;
     label: string;
 }) {
     const [ref, width] = useWidth<HTMLDivElement>();
     const [tip, setTip] = useState<TooltipState | null>(null);
+
+    // On touch screens the pointer "leaves" as soon as the finger lifts,
+    // so a tapped tooltip stays until the user taps somewhere else.
+    const hasTip = tip !== null;
+
+    useEffect(() => {
+        if (!hasTip) {
+            return;
+        }
+
+        const onPointerDown = (event: PointerEvent) => {
+            if (!ref.current?.contains(event.target as Node)) {
+                setTip(null);
+            }
+        };
+
+        document.addEventListener("pointerdown", onPointerDown);
+        return () => document.removeEventListener("pointerdown", onPointerDown);
+    }, [hasTip, ref]);
 
     return (
         <div ref={ref} className="relative w-full" style={{ height }}>
@@ -171,10 +205,15 @@ function ChartFrame({
                     height={height}
                     role="img"
                     aria-label={label}
-                    onPointerLeave={() => setTip(null)}
+                    onPointerLeave={event => {
+                        if (event.pointerType === "mouse") {
+                            setTip(null);
+                        }
+                    }}
                     className="block overflow-visible"
+                    style={{ touchAction: "pan-y" }}
                 >
-                    {children(width, setTip)}
+                    {children(width, setTip, tip)}
                 </svg>
             )}
             <Tooltip state={tip} width={width} />
@@ -231,7 +270,10 @@ export interface PaceDatum {
     date: string;
     current: number | null;
     previous: number | null;
+    previousDate: string | null;
 }
+
+const shortDate = (date: string) => format(parseISO(date), "MMM d");
 
 export function PaceChart({
     points,
@@ -262,10 +304,12 @@ export function PaceChart({
                 ]}
             />
             <ChartFrame height={height} label="Cumulative spending, this period vs previous period">
-                {(width, setTip) => {
+                {(width, setTip, tip) => {
                     const innerW = width - margin.left - margin.right;
                     const innerH = height - margin.top - margin.bottom;
                     const n = Math.max(points.length - 1, 1);
+                    const active = tip?.index !== undefined ? points[tip.index] : null;
+                    const activeIndex = tip?.index ?? -1;
                     const x = (i: number) => margin.left + (i / n) * innerW;
                     const y = (v: number) => margin.top + innerH - (v / top) * innerH;
 
@@ -281,34 +325,35 @@ export function PaceChart({
 
                     const labelEvery = Math.ceil(points.length / Math.max(Math.floor(innerW / 60), 1));
 
-                    return (
-                        <g
-                            onPointerMove={event => {
-                                const rect = (event.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect();
-                                const px = event.clientX - rect.left;
-                                const i = Math.round(((px - margin.left) / innerW) * n);
-                                const index = Math.min(Math.max(i, 0), points.length - 1);
-                                const point = points[index];
+                    const pick = (event: ReactPointerEvent<SVGGElement>) => {
+                        const rect = (event.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect();
+                        const px = event.clientX - rect.left;
+                        const i = Math.round(((px - margin.left) / innerW) * n);
+                        const index = Math.min(Math.max(i, 0), points.length - 1);
+                        const point = points[index];
 
-                                setTip({
-                                    x: x(index),
-                                    y: margin.top,
-                                    title: `Day ${point.day} · ${point.date}`,
-                                    rows: [
-                                        {
-                                            label: currentLabel,
-                                            value: point.current === null ? "—" : formatPeso(point.current),
-                                            color: COLORS.series1,
-                                        },
-                                        {
-                                            label: previousLabel,
-                                            value: point.previous === null ? "—" : formatPeso(point.previous),
-                                            color: COLORS.previous,
-                                        },
-                                    ],
-                                });
-                            }}
-                        >
+                        setTip({
+                            x: x(index),
+                            y: margin.top,
+                            index,
+                            title: `Day ${point.day} running total`,
+                            rows: [
+                                {
+                                    label: shortDate(point.date),
+                                    value: point.current === null ? "Not yet" : formatPeso(point.current),
+                                    color: COLORS.series1,
+                                },
+                                {
+                                    label: point.previousDate ? shortDate(point.previousDate) : "previous",
+                                    value: point.previous === null ? "—" : formatPeso(point.previous),
+                                    color: COLORS.previous,
+                                },
+                            ],
+                        });
+                    };
+
+                    return (
+                        <g onPointerDown={pick} onPointerMove={pick}>
                             <rect x={margin.left} y={margin.top} width={innerW} height={innerH} fill="transparent" />
                             <YAxis ticks={ticks} y={y} left={margin.left} right={width - margin.right} />
 
@@ -330,7 +375,40 @@ export function PaceChart({
                             <path d={path("previous")} fill="none" stroke={COLORS.previous} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                             <path d={path("current")} fill="none" stroke={COLORS.series1} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
 
-                            {lastCurrent && lastCurrent.current !== null && (
+                            {active && (
+                                <g pointerEvents="none">
+                                    <line
+                                        x1={x(activeIndex)}
+                                        x2={x(activeIndex)}
+                                        y1={margin.top}
+                                        y2={margin.top + innerH}
+                                        stroke={COLORS.baseline}
+                                        strokeWidth="1"
+                                    />
+                                    {active.previous !== null && (
+                                        <circle
+                                            cx={x(activeIndex)}
+                                            cy={y(active.previous)}
+                                            r="4"
+                                            fill={COLORS.previous}
+                                            stroke={COLORS.surface}
+                                            strokeWidth="2"
+                                        />
+                                    )}
+                                    {active.current !== null && (
+                                        <circle
+                                            cx={x(activeIndex)}
+                                            cy={y(active.current)}
+                                            r="4"
+                                            fill={COLORS.series1}
+                                            stroke={COLORS.surface}
+                                            strokeWidth="2"
+                                        />
+                                    )}
+                                </g>
+                            )}
+
+                            {!active && lastCurrent && lastCurrent.current !== null && (
                                 <>
                                     <circle
                                         cx={x(lastIndex)}
@@ -418,6 +496,7 @@ export function CategoryBars({ rows }: { rows: CategoryDatum[] }) {
                                 key={row.name}
                                 tabIndex={0}
                                 onPointerMove={show}
+                                onPointerDown={show}
                                 onFocus={show}
                                 onBlur={() => setTip(null)}
                                 className="outline-none"
@@ -547,6 +626,7 @@ export function ColumnChart<T extends { label: string }>({
                                         key={d.label}
                                         tabIndex={0}
                                         onPointerMove={show}
+                                        onPointerDown={show}
                                         onFocus={show}
                                         onBlur={() => setTip(null)}
                                         className="outline-none"

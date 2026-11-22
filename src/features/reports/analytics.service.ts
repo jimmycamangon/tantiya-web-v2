@@ -91,6 +91,8 @@ export interface PacePoint {
     current: number | null;
     /** Cumulative spend on the same day number of the previous period. */
     previous: number | null;
+    /** Date in the previous period for the same day number. */
+    previousDate: string | null;
 }
 
 export interface WeekdayRow {
@@ -252,6 +254,9 @@ export async function getReportAnalytics(
             date: dayKey(addDays(rangeStart, day)),
             current: day < elapsedDays ? roundMoney(runningCurrent) : null,
             previous: day < prevDays ? roundMoney(runningPrev) : null,
+            previousDate: day < prevDays
+                ? dayKey(addDays(parseISO(previous.start), day))
+                : null,
         });
     }
 

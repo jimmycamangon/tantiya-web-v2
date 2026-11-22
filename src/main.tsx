@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { AppFeedbackProvider } from './components/AppFeedback.tsx'
+import { initTheme } from './theme.ts'
+
+initTheme()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

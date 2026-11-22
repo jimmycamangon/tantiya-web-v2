@@ -4,20 +4,88 @@
   --font-sans: Inter, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
 }
 
+/*
+ * Warm charcoal dark theme.
+ *
+ * Components are written with light-theme classes (bg-white, text-stone-950,
+ * bg-emerald-50…). In dark mode the color scales are remapped so every class
+ * flips to its dark counterpart: surfaces go dark, text goes light, tints
+ * become deep tints and accent text gets brighter. Values come from
+ * Tailwind's own scales, tuned so muted text stays readable.
+ * Set by <html data-theme="dark"> (see src/theme.ts).
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces: page stone-950, cards stone-900. */
+  --color-white: oklch(21.6% 0.006 56.043);
+  --color-stone-50: oklch(14.7% 0.004 49.25);
+  --color-stone-100: oklch(26.8% 0.007 34.298);
+  --color-stone-200: oklch(30.5% 0.008 50);
+  --color-stone-300: oklch(37.4% 0.01 67.558);
+  --color-stone-400: oklch(55.3% 0.013 58.071);
+  --color-stone-500: oklch(70.9% 0.01 56.259);
+  --color-stone-600: oklch(86.9% 0.005 56.366);
+  --color-stone-700: oklch(92.3% 0.003 48.717);
+  --color-stone-800: oklch(92.3% 0.003 48.717);
+  --color-stone-900: oklch(97% 0.001 106.424);
+  --color-stone-950: oklch(98.5% 0.001 106.423);
+
+  --color-emerald-50: oklch(26.2% 0.051 172.552);
+  --color-emerald-100: oklch(37.8% 0.077 168.94);
+  --color-emerald-200: oklch(43.2% 0.095 166.913);
+  --color-emerald-300: oklch(50.8% 0.118 165.612);
+  --color-emerald-600: oklch(69.6% 0.17 162.48);
+  --color-emerald-700: oklch(76.5% 0.177 163.223);
+  --color-emerald-800: oklch(84.5% 0.143 164.978);
+  --color-emerald-900: oklch(90.5% 0.093 164.15);
+  --color-emerald-950: oklch(95% 0.052 163.051);
+
+  --color-amber-50: oklch(27.9% 0.077 45.635);
+  --color-amber-100: oklch(41.4% 0.112 45.904);
+  --color-amber-200: oklch(47.3% 0.137 46.201);
+  --color-amber-300: oklch(55.5% 0.163 48.998);
+  --color-amber-600: oklch(76.9% 0.188 70.08);
+  --color-amber-700: oklch(82.8% 0.189 84.429);
+  --color-amber-800: oklch(87.9% 0.169 91.605);
+  --color-amber-900: oklch(92.4% 0.12 95.746);
+  --color-amber-950: oklch(96.2% 0.059 95.617);
+
+  --color-red-50: oklch(25.8% 0.092 26.042);
+  --color-red-100: oklch(39.6% 0.141 25.723);
+  --color-red-200: oklch(44.4% 0.177 26.899);
+  --color-red-300: oklch(50.5% 0.213 27.518);
+  --color-red-600: oklch(70.4% 0.191 22.216);
+  --color-red-700: oklch(80.8% 0.114 19.571);
+  --color-red-800: oklch(88.5% 0.062 18.334);
+  --color-red-900: oklch(93.6% 0.032 17.717);
+  --color-red-950: oklch(97.1% 0.013 17.38);
+
+  --color-orange-50: oklch(26.6% 0.079 36.259);
+  --color-orange-100: oklch(40.8% 0.123 38.172);
+  --color-orange-200: oklch(47% 0.157 37.304);
+  --color-orange-300: oklch(55.3% 0.195 38.402);
+  --color-orange-600: oklch(70.5% 0.213 47.604);
+  --color-orange-700: oklch(75% 0.183 55.934);
+  --color-orange-800: oklch(83.7% 0.128 66.29);
+  --color-orange-900: oklch(90.1% 0.076 70.697);
+  --color-orange-950: oklch(95.4% 0.038 75.164);
+}
+
 @layer base {
   * {
     box-sizing: border-box;
   }
 
   html {
-    background: #fafaf9;
+    background: var(--color-stone-50, #fafaf9);
   }
 
   body {
     margin: 0;
     min-width: 320px;
-    color: #1c1917;
-    background: #fafaf9;
+    color: var(--color-stone-950, #1c1917);
+    background: var(--color-stone-50, #fafaf9);
     font-family: Inter, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
     font-size: 16px;
     letter-spacing: 0;

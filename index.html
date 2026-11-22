@@ -7,6 +7,18 @@
     <meta name="theme-color" content="#1c1917" />
     <link rel="apple-touch-icon" href="/pwa-192.png" />
     <title>Tantiya</title>
+    <script>
+      (function () {
+        try {
+          var p = localStorage.getItem("tantiya-theme");
+          var dark = p === "dark" || ((p === null || p === "system") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          var root = document.documentElement;
+          root.setAttribute("data-theme", dark ? "dark" : "light");
+          root.style.colorScheme = dark ? "dark" : "light";
+          if (dark) document.querySelector('meta[name="theme-color"]').setAttribute("content", "#0c0a09");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

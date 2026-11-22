@@ -12,7 +12,7 @@ import {
  * one y-axis, legend for 2+ series, hover tooltips on every chart.
  */
 
-import { COLORS, formatCompact, formatPeso } from "./chartTheme";
+import { formatCompact, formatPeso, useChartColors } from "./chartTheme";
 
 function useWidth<T extends HTMLElement>() {
     const ref = useRef<T>(null);
@@ -193,6 +193,8 @@ function YAxis({
     left: number;
     right: number;
 }) {
+    const COLORS = useChartColors();
+
     return (
         <g>
             {ticks.map(tick => (
@@ -240,6 +242,7 @@ export function PaceChart({
     currentLabel: string;
     previousLabel: string;
 }) {
+    const COLORS = useChartColors();
     const height = 220;
     const margin = { top: 10, right: 16, bottom: 24, left: 56 };
 
@@ -368,6 +371,7 @@ export interface CategoryDatum {
 }
 
 export function CategoryBars({ rows }: { rows: CategoryDatum[] }) {
+    const COLORS = useChartColors();
     const rowH = 32;
     const barH = 16;
     const margin = { top: 4, right: 72, bottom: 4, left: 110 };
@@ -489,6 +493,7 @@ export function ColumnChart<T extends { label: string }>({
     tooltipExtra?: (datum: T) => TooltipRow[];
     highlightMax?: boolean;
 }) {
+    const COLORS = useChartColors();
     const height = 220;
     const margin = { top: 18, right: 8, bottom: 24, left: 56 };
 

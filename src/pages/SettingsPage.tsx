@@ -3,6 +3,8 @@ import { AlertTriangle, Database }
 import ExportBackupButton from "../features/settings/ExportBackupButton";
 import ImportBackupButton
     from "../features/settings/ImportBackupButton";
+import ThemeSettings
+    from "../features/settings/ThemeSettings";
 
 export default function SettingsPage() {
 
@@ -16,9 +18,11 @@ export default function SettingsPage() {
                     Settings
                 </h1>
                 <p className="max-w-2xl text-sm text-stone-500">
-                    Manage backup files and restore your local Tantiya data.
+                    Choose a theme, and manage backups of your local Tantiya data.
                 </p>
             </div>
+
+            <ThemeSettings />
 
             <section className="max-w-3xl rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

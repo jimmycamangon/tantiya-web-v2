@@ -40,7 +40,7 @@ import {
     PaceChart,
 } from "../features/reports/charts";
 
-import { COLORS } from "../features/reports/chartTheme";
+import { useChartColors } from "../features/reports/chartTheme";
 
 import { getCurrentCutoff } from "../features/cutoffs/getCurrentCutoff";
 
@@ -211,6 +211,8 @@ function ReportCard({
 export default function ReportsPage() {
 
     const [today] = useState(() => new Date());
+
+    const COLORS = useChartColors();
 
     const [preset, setPreset] = useState<PresetId | null>("this_month");
 
